@@ -20,6 +20,7 @@
 
 ## Phase 3: AI Integration 🤖
 - [x] Basic AI model setup
+- [x] Trading Agent Example
 - [ ] Risk assessment agent
 - [ ] Entry/exit strategy agent
 - [ ] Sentiment analysis agent
