@@ -3,7 +3,7 @@
 Built with love by Moon Dev 🚀
 """
 
-from src.core.config import *
+from src.config import *
 import requests
 import pandas as pd
 import pprint

@@ -1,8 +1,19 @@
 """
-🌙 Moon Dev's Trading Configuration
-All the magic numbers and settings live here! 
-Remember: Moon Dev says always be careful with your config! 🚀
+🌙 Moon Dev's Configuration File
+Built with love by Moon Dev 🚀
 """
+
+# 🔑 API Configuration
+AI_MODEL = "claude-3-opus-20240229"
+AI_MAX_TOKENS = 4096
+AI_TEMPERATURE = 0.7
+
+# 💰 Trading Configuration
+USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"  # Never trade or close
+SOL_ADDRESS = "So11111111111111111111111111111111111111111"   # Never trade or close
+
+# Create a list of addresses to exclude from trading/closing
+EXCLUDED_TOKENS = [USDC_ADDRESS, SOL_ADDRESS]
 
 # Token List for Trading 📋
 MONITORED_TOKENS = [
@@ -26,7 +37,7 @@ symbol = '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump'
 address = '4wgfCBf2WwLSRKLef9iW7JXZ2AfkxUxGM4XcKpHm3Sin'
 
 # Position sizing 🎯
-usd_size = 10  # Size of position to hold
+usd_size = 25  # Size of position to hold
 max_usd_order_size = 1  # Max order size
 tx_sleep = 30  # Sleep between transactions
 slippage = 199  # Slippage settings
@@ -37,8 +48,10 @@ MAX_POSITION_PERCENTAGE = 30  # Maximum % allocation per position (0-100)
 STOPLOSS_PRICE = 1
 BREAKOUT_PRICE = .0001
 SLEEP_AFTER_CLOSE = 600  # Prevent overtrading
-DAILY_MAX_LOSS = 1000
-DAILY_MAX_GAIN = 1000
+DAILY_MAX_LOSS = .001 # in USDC - this is the max loss per day
+DAILY_MAX_GAIN = .001 # in USDC - this is the max gain per day
+MAX_LOSS_GAIN_CHECK_HOURS = 12  # How far back to check for max loss/gain limits (in hours)
+SLEEP_BETWEEN_RUNS_MINUTES = 15  # How long to sleep between agent runs 🕒
 
 # Transaction settings ⚡
 slippage = 199  # 50% slippage, 500 = 5% and 50 = .5% slippage

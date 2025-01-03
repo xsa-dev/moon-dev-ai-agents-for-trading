@@ -7,7 +7,7 @@ This is an experimental research project exploring AI agents for trading, develo
 
 ## 🔍 Current Project State
 **Status**: Active Development Phase 🚀
-**Last Updated**: [Current Date]
+**Last Updated**: 1/3
 
 ## 🤖 Current Agent Components
 1. **Data Collection Agent** (Implemented)
@@ -16,12 +16,17 @@ This is an experimental research project exploring AI agents for trading, develo
      - OHLCV data collection with temp storage
      - Configurable permanent/temporary data saving
      - Auto-cleanup of temp data
-     - First 4 chars token ID display
      - Environment variable based configuration
 
-2. **Risk Control Agent** (In Development)
-   - Status: Planning Phase
-   - Purpose: Oversee and manage trading risk parameters
+2. **Risk Control Agent** (Implemented)
+   - Status: ✅ Basic Implementation Complete
+   - Features:
+     - Daily PnL monitoring and logging
+     - Max loss/gain limit enforcement
+     - AI-powered override decisions
+     - Portfolio value tracking
+     - Position closing functionality
+     - Configurable check intervals
 
 3. **Trading Actions Agent** (Implemented)
    - Status: ✅ Basic Implementation Complete
@@ -30,6 +35,7 @@ This is an experimental research project exploring AI agents for trading, develo
      - Position management
      - Slippage control
      - Transaction retry logic
+     - Configurable run intervals
 
 4. **Multi-Token Monitor** (Implemented)
    - Status: ✅ Basic Implementation Complete
@@ -37,6 +43,7 @@ This is an experimental research project exploring AI agents for trading, develo
      - Monitoring multiple token addresses
      - USDC and various token support
      - Configurable token list
+     - Spam token filtering
 
 5. **Future Planned Agents**
    - Exit Agent (Planned)
@@ -51,26 +58,34 @@ This is an experimental research project exploring AI agents for trading, develo
 - Multi-token monitoring
 - Basic trading operations
 - OHLCV data collection and analysis
+- Risk management and PnL tracking
+- AI-powered trading decisions
+- Portfolio balance logging
+- Position size management
 
 ## ⚠️ Important Notes
 - Using .env for secure key management
 - Temporary data storage for LLM compatibility
-- First 4 chars of token addresses for cleaner logs
-- Emphasis on debugging with emoji-rich prints
+- Risk agent runs before and after trading agent
+- Configurable sleep intervals between runs
+- Max loss/gain limits with AI override capability
 
 ## 🔄 Daily Updates
-### [Current Date]
-- Implemented temporary data storage system
-- Added configurable data saving options
-- Updated token display to show first 4 chars
-- Improved environment variable handling
-- Added multi-token monitoring capabilities
+### 2024-03-21
+- Implemented risk agent with PnL monitoring
+- Added portfolio balance tracking
+- Integrated AI-powered override decisions
+- Added configurable run intervals
+- Improved position management
+- Enhanced error handling and logging
+- Added spam token filtering
 
 ## 🎯 Next Steps
-1. Implement risk control agent logic
+1. Enhance risk agent with more market data analysis
 2. Develop sentiment analysis capabilities
 3. Create portfolio-wide analysis system
 4. Enhance multi-token coordination
+5. Implement percentage-based max loss/tp
 
 ## 🛠️ Technical Stack
 - Python-based implementation
@@ -78,6 +93,7 @@ This is an experimental research project exploring AI agents for trading, develo
 - Temporary and permanent data storage
 - Birdeye API integration
 - Jupiter API for trading
+- Claude AI integration
 - Emoji-rich debugging 🌙
 
 ## 🌟 Easter Eggs

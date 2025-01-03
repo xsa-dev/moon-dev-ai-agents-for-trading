@@ -15,14 +15,14 @@
 - [x] Position management
 - [x] Slippage control
 - [x] Transaction retry logic
-- [ ] Risk management system
+- [x] Risk management system
 - [ ] Portfolio-wide analysis
 - [ ] Advanced order types
 
 ## Phase 3: AI Integration 🤖
 - [x] Basic AI model setup
 - [x] Trading Agent Example
-- [ ] Risk assessment agent
+- [x] Risk assessment agent
 - [ ] Entry/exit strategy agent
 - [ ] Sentiment analysis agent
 - [ ] Multi-agent coordination
@@ -45,10 +45,10 @@
 - [ ] Emergency protocols
 
 ## Current Focus 🎯
-- Implementing risk control agent
-- Enhancing multi-token coordination
+- Enhancing risk agent with more market data analysis
+- Improving multi-token coordination
 - Developing portfolio analysis system
-- Improving data management
+- Implementing percentage-based max loss/tp
 
 ## Future Considerations 🌠
 - Cross-chain integration
@@ -63,5 +63,8 @@
 
 ## vision for improving this package
 - simply build one new agent per day, or improve one per day and then be out. slow and steady but focused ALWAYS wins.
+
+## random features
+[] % based max loss / tp
 
 *This roadmap is maintained by Moon Dev and serves as a guide for AI agents in understanding project progression* 🤖✨

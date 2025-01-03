@@ -60,11 +60,13 @@ import pandas as pd
 import json
 from termcolor import colored, cprint
 from dotenv import load_dotenv
-from ..config import *  # Updated import path
-from .. import nice_funcs as n  # Updated import path
-from ..data.ohlcv_collector import collect_all_tokens
 from datetime import datetime, timedelta
 import time
+
+# Local imports
+from src.config import *
+from src import nice_funcs as n
+from src.data.ohlcv_collector import collect_all_tokens
 
 # Load environment variables
 load_dotenv()
@@ -282,29 +284,30 @@ class TradingAgent:
         
         for _, row in self.recommendations_df.iterrows():
             token = row['token']
+            
+            # Skip excluded tokens (USDC and SOL)
+            if token in EXCLUDED_TOKENS:
+                continue
+                
             action = row['action']
             
             # Check if we have a position
             current_position = n.get_token_balance_usd(token)
             
             if current_position > 0 and action in ["SELL", "NOTHING"]:
-                cprint(f"\n🚫 AI Agent recommends {action} for {token[:8]} (Current position: ${current_position:.2f})", "white", "on_yellow")
+                cprint(f"\n🚫 AI Agent recommends {action} for {token}", "white", "on_yellow")
+                cprint(f"💰 Current position: ${current_position:.2f}", "white", "on_blue")
                 try:
-                    cprint(f"📉 Closing position for {token[:8]}...", "white", "on_blue")
+                    cprint(f"📉 Closing position with chunk_kill...", "white", "on_cyan")
                     n.chunk_kill(token, max_usd_order_size, slippage)
-                    cprint(f"✅ Successfully closed position for {token[:8]}", "white", "on_green")
+                    cprint(f"✅ Successfully closed position", "white", "on_green")
                 except Exception as e:
-                    cprint(f"❌ Error closing position for {token[:8]}: {str(e)}", "white", "on_red")
+                    cprint(f"❌ Error closing position: {str(e)}", "white", "on_red")
             elif current_position > 0:
-                cprint(f"✨ Keeping position for {token[:8]} (${current_position:.2f}) - AI recommends {action}", "white", "on_blue")
+                cprint(f"✨ Keeping position for {token} (${current_position:.2f}) - AI recommends {action}", "white", "on_blue")
 
-def main():
-    """Main function to run the trading agent every 15 minutes"""
-    cprint("🌙 Moon Dev AI Trading System Starting Up! 🚀", "white", "on_blue")
-    
-    INTERVAL = RUN_INTERVAL_MINUTES * 60  # Convert minutes to seconds
-    
-    while True:
+    def run_trading_cycle(self):
+        """Run one complete trading cycle"""
         try:
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cprint(f"\n⏰ AI Agent Run Starting at {current_time}", "white", "on_green")
@@ -313,27 +316,24 @@ def main():
             cprint("📊 Collecting market data...", "white", "on_blue")
             market_data = collect_all_tokens()
             
-            # Initialize AI agent
-            agent = TradingAgent()
-            
             # Analyze each token's data
             for token, data in market_data.items():
                 cprint(f"\n🤖 AI Agent Analyzing Token: {token}", "white", "on_green")
-                analysis = agent.analyze_market_data(token, data.to_dict())
+                analysis = self.analyze_market_data(token, data.to_dict())
                 print(f"\n📈 Analysis for contract: {token}")
                 print(analysis)
                 print("\n" + "="*50 + "\n")
             
             # Show recommendations summary (without reasoning)
             cprint("\n📊 Moon Dev's Trading Recommendations:", "white", "on_blue")
-            summary_df = agent.recommendations_df[['token', 'action', 'confidence']].copy()
+            summary_df = self.recommendations_df[['token', 'action', 'confidence']].copy()
             print(summary_df.to_string(index=False))
             
             # First handle any exits based on recommendations
             cprint("\n🔄 Checking for positions to exit...", "white", "on_blue")
             
             # Handle exits first - close any positions where recommendation is SELL or NOTHING
-            for _, row in agent.recommendations_df.iterrows():
+            for _, row in self.recommendations_df.iterrows():
                 token = row['token']
                 action = row['action']
                 
@@ -351,22 +351,19 @@ def main():
             
             # Then proceed with new allocations for BUY recommendations
             cprint("\n💰 Calculating optimal portfolio allocation...", "white", "on_blue")
-            allocation = agent.allocate_portfolio(usd_size)
+            allocation = self.allocate_portfolio(usd_size)
             
             if allocation:
                 cprint("\n💼 Moon Dev's Portfolio Allocation:", "white", "on_blue")
                 print(json.dumps(allocation, indent=4))
                 
                 cprint("\n🎯 Executing allocations...", "white", "on_blue")
-                agent.execute_allocations(allocation)
+                self.execute_allocations(allocation)
                 cprint("\n✨ All allocations executed!", "white", "on_blue")
             else:
                 cprint("\n⚠️ No allocations to execute!", "white", "on_yellow")
             
-            next_run = datetime.now() + timedelta(minutes=RUN_INTERVAL_MINUTES)
-            cprint(f"\n⏳ AI Agent run complete. Next run at {next_run.strftime('%Y-%m-%d %H:%M:%S')}", "white", "on_green")
-            
-            # Clean up temp data before sleeping
+            # Clean up temp data
             cprint("\n🧹 Cleaning up temporary data...", "white", "on_blue")
             try:
                 for file in os.listdir('temp_data'):
@@ -375,6 +372,24 @@ def main():
                 cprint("✨ Temp data cleaned successfully!", "white", "on_green")
             except Exception as e:
                 cprint(f"⚠️ Error cleaning temp data: {str(e)}", "white", "on_yellow")
+                
+        except Exception as e:
+            cprint(f"\n❌ Error in trading cycle: {str(e)}", "white", "on_red")
+            cprint("🔧 Moon Dev suggests checking the logs and trying again!", "white", "on_blue")
+
+def main():
+    """Main function to run the trading agent every 15 minutes"""
+    cprint("🌙 Moon Dev AI Trading System Starting Up! 🚀", "white", "on_blue")
+    
+    agent = TradingAgent()
+    INTERVAL = RUN_INTERVAL_MINUTES * 60  # Convert minutes to seconds
+    
+    while True:
+        try:
+            agent.run_trading_cycle()
+            
+            next_run = datetime.now() + timedelta(minutes=RUN_INTERVAL_MINUTES)
+            cprint(f"\n⏳ AI Agent run complete. Next run at {next_run.strftime('%Y-%m-%d %H:%M:%S')}", "white", "on_green")
             
             # Sleep until next interval
             time.sleep(INTERVAL)
