@@ -75,6 +75,10 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - Trading Education: [https://algotradecamp.com](https://algotradecamp.com)
 - Business
 
+## Live Agents
+- Trading Agent (found in src/agents/trading_agent.py): this is just an example trading agent that will collect data from the solana contract addresses that you put in the config () and then send to an llm in order to analyze that data. then make a decision (do nothing, buy or sell) and then execute the trade. this one is just an example and will not be profitable cause it has no strategy yet. 
+   - in the future adding a strategy that they can trade won't be that hard but i just wanted to get an example live and then start building out my most important agent which is my risk agent. managing risk is everything in trading and humans don't do it well, so that's why i am building the risk agent first. 
+
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
 
