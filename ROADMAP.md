@@ -33,6 +33,8 @@
 - [ ] Advanced risk metrics
 - [ ] Performance analytics
 - [ ] Automated reporting
+- [ ] Hyperliquid Perp Trading
+- [ ] Hyperliquid Spot Trading 
 
 ## Phase 5: Optimization & Scaling 🚀
 - [ ] Performance optimization

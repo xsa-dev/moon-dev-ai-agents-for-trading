@@ -8,6 +8,7 @@ dontshare.py
 secrets.json
 config.private.py
 MYNOTES.md
+temp_data/
 
 # Python
 __pycache__/

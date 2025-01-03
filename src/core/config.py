@@ -36,6 +36,8 @@ MAX_POSITION_PERCENTAGE = 30  # Maximum % allocation per position (0-100)
 STOPLOSS_PRICE = 1
 BREAKOUT_PRICE = .0001
 SLEEP_AFTER_CLOSE = 600  # Prevent overtrading
+DAILY_MAX_LOSS = 1000
+DAILY_MAX_GAIN = 1000
 
 # Transaction settings ⚡
 slippage = 199  # 50% slippage, 500 = 5% and 50 = .5% slippage
