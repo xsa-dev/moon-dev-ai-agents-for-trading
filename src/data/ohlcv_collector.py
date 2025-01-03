@@ -4,8 +4,8 @@ Collects Open-High-Low-Close-Volume data for specified tokens
 Built with love by Moon Dev 🚀
 """
 
-from ..core.config import *
-from ..core import nice_funcs as n
+from ..config import *
+from .. import nice_funcs as n
 import pandas as pd
 from datetime import datetime
 import os

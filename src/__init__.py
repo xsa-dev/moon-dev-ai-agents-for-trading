@@ -1,3 +1,3 @@
 """
-🌙 Moon Dev Trading System
+🌙 Moon Dev's Trading System
 """ 

@@ -10,6 +10,7 @@
 - [x] Token display improvements
 
 ## Phase 2: Core Trading Infrastructure 🚧
+- [x] ezbot.py that allows hand traders bot functions
 - [x] Market buy/sell functionality
 - [x] Position management
 - [x] Slippage control
@@ -55,5 +56,12 @@
 - Real-time sentiment analysis
 - Automated strategy adjustment
 - Community integration
+
+## Guides/Examples to make
+- [ ] how to use ezbot.py
+- [ ] how to run a test agent with trading_agent.py
+
+## vision for improving this package
+- simply build one new agent per day, or improve one per day and then be out. slow and steady but focused ALWAYS wins.
 
 *This roadmap is maintained by Moon Dev and serves as a guide for AI agents in understanding project progression* 🤖✨

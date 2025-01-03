@@ -1,22 +1,85 @@
 """
-🌙 Moon Dev AI Trading System
-Main entry point for the trading system
-Built with love by Moon Dev 🚀
+🌙 Moon Dev's AI Trading System
+Main entry point for running trading agents
 """
 
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.agents.trading_agent import main as run_agent
+from termcolor import cprint
+from dotenv import load_dotenv
+import time
+from datetime import datetime
 
-if __name__ == "__main__":
-    print("🚀 Starting Moon Dev's AI Trading System...")
-    print("💫 Remember: Moon Dev says trade safe and smart!")
+# Import agents
+from agents.trading_agent import TradingAgent
+from agents.risk_agent import RiskAgent
+
+# Load environment variables
+load_dotenv()
+
+# Agent Configuration
+ACTIVE_AGENTS = {
+    'risk': True,      # Risk management agent
+    'trading': False,  # Trading agent
+    # Add more agents here as we build them:
+    # 'sentiment': False,  # Future sentiment analysis agent
+    # 'portfolio': False,  # Future portfolio optimization agent
+}
+
+def run_agents():
+    """Initialize and run all active agents"""
+    agents = {}
     
     try:
-        run_agent()
+        # Initialize active agents
+        if ACTIVE_AGENTS.get('risk'):
+            cprint("🛡️ Initializing Risk Agent...", "white", "on_blue")
+            agents['risk'] = RiskAgent()
+            
+        if ACTIVE_AGENTS.get('trading'):
+            cprint("🤖 Initializing Trading Agent...", "white", "on_blue")
+            agents['trading'] = TradingAgent()
+        
+        # Main loop
+        while True:
+            current_time = datetime.now()
+            cprint(f"\n⏰ Agent Run Starting at {current_time.strftime('%Y-%m-%d %H:%M:%S')}", "white", "on_green")
+            
+            # Run risk agent first (if active)
+            if 'risk' in agents:
+                # Log balance at 8 AM
+                if current_time.hour == 8 and current_time.minute < 15:
+                    cprint("\n⏰ 8 AM - Logging daily starting balance...", "white", "on_blue")
+                    agents['risk'].log_daily_balance()
+                
+                # Always check PnL limits
+                limit_hit = agents['risk'].check_pnl_limits()
+                if limit_hit:
+                    cprint("⚠️ PnL limit hit - skipping other agents this cycle", "white", "on_yellow")
+                    time.sleep(300)  # Sleep 5 minutes
+                    continue
+            
+            # Run trading agent (if active and no limits hit)
+            if 'trading' in agents:
+                cprint("\n🤖 Running Trading Agent...", "white", "on_blue")
+                agents['trading'].run_trading_cycle()
+            
+            # Add more agents here as we build them
+            
+            cprint("\n✨ Agent Cycle Complete", "white", "on_green")
+            time.sleep(300)  # Sleep 5 minutes between cycles
+            
     except KeyboardInterrupt:
-        print("\n👋 Moon Dev AI Trading System shutting down gracefully...")
+        cprint("\n👋 Moon Dev AI System shutting down gracefully...", "white", "on_blue")
     except Exception as e:
-        print(f"❌ Error occurred: {str(e)}")
-        print("🔧 Moon Dev suggests checking the logs and trying again!")
+        cprint(f"\n❌ Error in main loop: {str(e)}", "white", "on_red")
+        cprint("🔧 Moon Dev suggests checking the logs and trying again!", "white", "on_blue")
+
+if __name__ == "__main__":
+    cprint("\n🌙 Moon Dev AI Trading System Starting...", "white", "on_blue")
+    cprint("\n📊 Active Agents:", "white", "on_blue")
+    for agent, active in ACTIVE_AGENTS.items():
+        status = "✅ ON" if active else "❌ OFF"
+        cprint(f"  • {agent.title()}: {status}", "white", "on_blue")
+    print("\n")
+    
+    run_agents()
