@@ -132,13 +132,10 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 ### Shipped Features 📦
 
-1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
-
-1/3 - risk_agent.py: built out an ai agent to manage risk
-
-1/2 - trading_agent.py: built the first trading agent
-
-1/1 - first lines of code written
+- [x] 1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
+- [x] 1/3 - risk_agent.py: built out an ai agent to manage risk
+- [x] 1/2 - trading_agent.py: built the first trading agent 
+- [x] 1/1 - first lines of code written
 
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
