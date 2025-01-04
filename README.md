@@ -20,6 +20,13 @@ AI agents might help address common trading challenges:
 
 While we use the RBI framework for strategy research, we're exploring AI agents as potential tools. We're in early stages with LLM technology, investigating possibilities in the trading space.
 
+*There is no token associated with this project and there never will be. any token launched is not affiliated with this project, moon dev will never dm you. be careful. don't send funds anywhere*
+
+## Video Updates
+i will place video updates here as often as possible. i'll also be working on making shorter written and video documentation as features get solidified.
+- [1/1/25] [Day 1: Building The AI Agent Infastructure](https://www.youtube.com/watch?v=0-UfinNUfrI)
+- [1/2/25] [Building out first trading agent](https://www.youtube.com/watch?v=Grg2Sir5vOY)
+
 ## 🗺️ Research Roadmap
 
 ### 1. Risk Control Agents
@@ -84,12 +91,6 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
    - in the future adding a strategy that they can trade won't be that hard but i just wanted to get an example live and then start building out my most important agent which is my risk agent. managing risk is everything in trading and humans don't do it well, so that's why i am building the risk agent first. 
    - training video: coming soon...
    
-*There is no token associated with this project and there never will be. any token launched is not affiliated with this project, moon dev will never dm you. be careful. don't send funds anywhere*
-
-## Video Updates
-i will place video updates here as often as possible. i'll also be working on making shorter written and video documentation as features get solidified.
-- [1/1/25] [Day 1: Building The AI Agent Infastructure](https://www.youtube.com/watch?v=0-UfinNUfrI)
-- [1/2/25] [Building out first trading agent](https://www.youtube.com/watch?v=Grg2Sir5vOY)
 
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
