@@ -38,7 +38,7 @@ address = '4wgfCBf2WwLSRKLef9iW7JXZ2AfkxUxGM4XcKpHm3Sin'
 
 # Position sizing 🎯
 usd_size = 25  # Size of position to hold
-max_usd_order_size = 1  # Max order size
+max_usd_order_size = 3  # Max order size
 tx_sleep = 30  # Sleep between transactions
 slippage = 199  # Slippage settings
 
@@ -48,10 +48,21 @@ MAX_POSITION_PERCENTAGE = 30  # Maximum % allocation per position (0-100)
 STOPLOSS_PRICE = 1
 BREAKOUT_PRICE = .0001
 SLEEP_AFTER_CLOSE = 600  # Prevent overtrading
-DAILY_MAX_LOSS = .001 # in USDC - this is the max loss per day
-DAILY_MAX_GAIN = .001 # in USDC - this is the max gain per day
+
 MAX_LOSS_GAIN_CHECK_HOURS = 12  # How far back to check for max loss/gain limits (in hours)
 SLEEP_BETWEEN_RUNS_MINUTES = 15  # How long to sleep between agent runs 🕒
+
+
+# Max Loss/Gain Settings
+USE_PERCENTAGE = False  # If True, use percentage-based limits. If False, use USD-based limits
+
+# USD-based limits (used if USE_PERCENTAGE is False)
+MAX_LOSS_USD = 1  # Maximum loss in USD before stopping trading
+MAX_GAIN_USD = 1  # Maximum gain in USD before stopping trading
+
+# Percentage-based limits (used if USE_PERCENTAGE is True)
+MAX_LOSS_PERCENT = 5  # Maximum loss as percentage (e.g., 20 = 20% loss)
+MAX_GAIN_PERCENT = 5  # Maximum gain as percentage (e.g., 50 = 50% gain)
 
 # Transaction settings ⚡
 slippage = 199  # 50% slippage, 500 = 5% and 50 = .5% slippage
@@ -85,3 +96,4 @@ EXIT_ALL_POSITIONS = False
 DO_NOT_TRADE_LIST = ['777']
 CLOSED_POSITIONS_TXT = '777'
 minimum_trades_in_last_hour = 777
+

@@ -148,92 +148,63 @@ class TradingAgent:
             ], ignore_index=True)
             return None
     
-    def allocate_portfolio(self, total_size):
-        """Allocate portfolio based on recommendations"""
+    def allocate_portfolio(self):
+        """Get AI-recommended portfolio allocation"""
         try:
-            # Clean and format recommendations for the allocation agent
-            clean_df = self.recommendations_df.copy()
+            cprint("\n💰 Calculating optimal portfolio allocation...", "cyan")
+            max_position_size = usd_size * (MAX_POSITION_PERCENTAGE / 100)
+            cprint(f"🎯 Maximum position size: ${max_position_size:.2f} ({MAX_POSITION_PERCENTAGE}% of ${usd_size:.2f})", "cyan")
             
-            # Filter to only include BUY recommendations
-            buy_df = clean_df[clean_df['action'] == 'BUY'].copy()
-            if buy_df.empty:
-                cprint("🤔 No BUY recommendations - keeping everything in USDC", "white", "on_blue")
-                return {USDC_ADDRESS: total_size}
-            
-            # Ensure all columns are strings and clean any TextBlock objects
-            for col in buy_df.columns:
-                buy_df[col] = buy_df[col].apply(lambda x: 
-                    x.text if hasattr(x, 'text') else str(x))
-            
-            # Calculate maximum position size (30% of total)
-            max_position_size = total_size * 0.30
-            cprint(f"🎯 Maximum position size: ${max_position_size:.2f} (30% of ${total_size:.2f})", "white", "on_blue")
-            
-            recommendations_str = buy_df.to_string()
-            
+            # Get allocation from AI
             message = self.client.messages.create(
                 model=AI_MODEL,
                 max_tokens=AI_MAX_TOKENS,
                 temperature=AI_TEMPERATURE,
-                messages=[
-                    {
-                        "role": "user", 
-                        "content": f"{ALLOCATION_PROMPT}\n\nTotal Size: ${total_size}\nMax Position Size: ${max_position_size}\n\nRecommendations:\n{recommendations_str}"
-                    }
-                ]
+                messages=[{
+                    "role": "user", 
+                    "content": f"""You are Moon Dev's Portfolio Allocation AI 🌙
+
+Given:
+- Total portfolio size: ${usd_size}
+- Maximum position size: ${max_position_size} ({MAX_POSITION_PERCENTAGE}% of total)
+- Minimum cash (USDC) buffer: {CASH_PERCENTAGE}%
+- Available tokens: {MONITORED_TOKENS}
+
+Provide a portfolio allocation that:
+1. Never exceeds max position size per token
+2. Maintains minimum cash buffer
+3. Returns allocation as a JSON object with token addresses as keys and USD amounts as values
+4. Uses USDC_ADDRESS for cash allocation
+
+Example format:
+{{
+    "token_address": amount_in_usd,
+    "USDC_ADDRESS": remaining_cash_amount
+}}"""
+                }]
             )
             
-            # Parse the allocation response
-            allocation_str = message.content
-            if isinstance(allocation_str, list):
-                allocation_str = '\n'.join([
-                    item.text if hasattr(item, 'text') else str(item)
-                    for item in allocation_str
-                ])
-            
-            # Extract the dictionary string and parse it
-            try:
-                start_idx = allocation_str.find('{')
-                end_idx = allocation_str.find('}', start_idx) + 1
-                if start_idx != -1 and end_idx != -1:
-                    json_str = allocation_str[start_idx:end_idx]
-                    json_str = json_str.strip()
-                    allocation_dict = json.loads(json_str)
-                    
-                    # Ensure cash is stored with USDC_ADDRESS
-                    if 'cash' in allocation_dict:
-                        allocation_dict[USDC_ADDRESS] = allocation_dict.pop('cash')
-                    if 'USDC_ADDRESS' in allocation_dict:
-                        allocation_dict[USDC_ADDRESS] = allocation_dict.pop('USDC_ADDRESS')
-                        
-                    # Validate and cap allocations
-                    for token, amount in list(allocation_dict.items()):
-                        if token != USDC_ADDRESS and amount > max_position_size:
-                            cprint(f"⚠️ Capping {token} allocation from ${amount:.2f} to ${max_position_size:.2f}", "white", "on_yellow")
-                            allocation_dict[token] = max_position_size
-                else:
-                    raise ValueError("Could not find valid JSON in response")
-                
-                # Create DataFrame with allocations
-                allocations_df = pd.DataFrame([
-                    {"token": k, "allocation": v, "timestamp": datetime.now()}
-                    for k, v in allocation_dict.items()
-                ])
-                
-                # Save to CSV in src/data directory
-                os.makedirs('src/data', exist_ok=True)
-                allocations_df.to_csv('src/data/current_allocation.csv', index=False)
-                cprint("💾 Portfolio allocation saved with position size limits!", "white", "on_blue")
-                
-                return allocation_dict
-                
-            except Exception as e:
-                print(f"❌ Error parsing allocation response: {str(e)}")
-                print(f"Raw response: {allocation_str}")
+            # Parse the response
+            allocations = self.parse_allocation_response(str(message.content))
+            if not allocations:
                 return None
+                
+            # Validate allocation totals
+            total_allocated = sum(allocations.values())
+            if total_allocated > usd_size:
+                cprint(f"❌ Total allocation ${total_allocated:.2f} exceeds portfolio size ${usd_size:.2f}", "red")
+                return None
+                
+            # Print allocations
+            cprint("\n📊 Portfolio Allocation:", "green")
+            for token, amount in allocations.items():
+                token_display = "USDC" if token == "USDC_ADDRESS" else token
+                cprint(f"  • {token_display}: ${amount:.2f}", "green")
+                
+            return allocations
             
         except Exception as e:
-            print(f"❌ Error in portfolio allocation: {str(e)}")
+            cprint(f"❌ Error in portfolio allocation: {str(e)}", "red")
             return None
 
     def execute_allocations(self, allocation_dict):
@@ -351,7 +322,7 @@ class TradingAgent:
             
             # Then proceed with new allocations for BUY recommendations
             cprint("\n💰 Calculating optimal portfolio allocation...", "white", "on_blue")
-            allocation = self.allocate_portfolio(usd_size)
+            allocation = self.allocate_portfolio()
             
             if allocation:
                 cprint("\n💼 Moon Dev's Portfolio Allocation:", "white", "on_blue")
@@ -376,6 +347,48 @@ class TradingAgent:
         except Exception as e:
             cprint(f"\n❌ Error in trading cycle: {str(e)}", "white", "on_red")
             cprint("🔧 Moon Dev suggests checking the logs and trying again!", "white", "on_blue")
+
+    def parse_allocation_response(self, response):
+        """Parse the AI's allocation response and clean it to valid JSON"""
+        try:
+            # Find the JSON block between curly braces
+            start = response.find('{')
+            end = response.rfind('}') + 1
+            if start == -1 or end == 0:
+                raise ValueError("No JSON object found in response")
+            
+            json_str = response[start:end]
+            
+            # Remove comments (anything after #)
+            json_lines = []
+            for line in json_str.split('\n'):
+                comment_pos = line.find('#')
+                if comment_pos != -1:
+                    line = line[:comment_pos]
+                json_lines.append(line)
+            
+            # Rejoin and ensure it's valid JSON
+            cleaned_json = '\n'.join(json_lines)
+            
+            # Remove trailing commas which are invalid in JSON
+            cleaned_json = cleaned_json.replace(',}', '}')
+            cleaned_json = cleaned_json.replace(',\n}', '\n}')
+            
+            # Parse the cleaned JSON
+            allocations = json.loads(cleaned_json)
+            
+            # Validate allocations
+            for token, amount in allocations.items():
+                if not isinstance(amount, (int, float)):
+                    raise ValueError(f"Invalid allocation amount for {token}: {amount}")
+                
+            return allocations
+            
+        except Exception as e:
+            cprint(f"❌ Error parsing allocation response: {str(e)}", "red")
+            cprint("Raw response:", "yellow")
+            print(response)
+            return None
 
 def main():
     """Main function to run the trading agent every 15 minutes"""

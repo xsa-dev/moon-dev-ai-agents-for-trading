@@ -278,7 +278,7 @@ def market_sell(QUOTE_TOKEN, amount, slippage):
     KEY = Keypair.from_base58_string(os.getenv("SOLANA_PRIVATE_KEY"))
     if not KEY:
         raise ValueError("🚨 SOLANA_PRIVATE_KEY not found in environment variables!")
-    
+    #print('key success')
     SLIPPAGE = slippage  # 5000 is 50%, 500 is 5% and 50 is .5%
 
     # token would be usdc for sell orders cause we are selling
@@ -287,9 +287,10 @@ def market_sell(QUOTE_TOKEN, amount, slippage):
     http_client = Client(os.getenv("RPC_ENDPOINT"))
     if not http_client:
         raise ValueError("🚨 RPC_ENDPOINT not found in environment variables!")
+    print('http client success')
 
     quote = requests.get(f'https://quote-api.jup.ag/v6/quote?inputMint={QUOTE_TOKEN}&outputMint={token}&amount={amount}&slippageBps={SLIPPAGE}').json()
-    
+    #print(quote)
     txRes = requests.post('https://quote-api.jup.ag/v6/swap',
                           headers={"Content-Type": "application/json"},
                           data=json.dumps({
@@ -297,10 +298,13 @@ def market_sell(QUOTE_TOKEN, amount, slippage):
                               "userPublicKey": str(KEY.pubkey()),
                               "prioritizationFeeLamports": PRIORITY_FEE
                           })).json()
-    
+    #print(txRes)
     swapTx = base64.b64decode(txRes['swapTransaction'])
+    #print(swapTx)
     tx1 = VersionedTransaction.from_bytes(swapTx)
+    #print(tx1)
     tx = VersionedTransaction(tx1.message, [KEY])
+    #print(tx)
     txId = http_client.send_raw_transaction(bytes(tx), TxOpts(skip_preflight=True)).value
     print(f"https://solscan.io/tx/{str(txId)}")
 

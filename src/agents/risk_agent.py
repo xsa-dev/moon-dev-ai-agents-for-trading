@@ -221,127 +221,129 @@ class RiskAgent:
             return False
 
     def check_pnl_limits(self):
-        """Check if portfolio value exceeds max loss/gain limits"""
+        """Check if PnL limits have been hit"""
         try:
-            balance_file = 'src/data/portfolio_balance.csv'
-            if not os.path.exists(balance_file):
-                cprint("⚠️ No balance history found", "white", "on_yellow")
-                return False
-                
+            # Get current actual balance first
+            current_balance = self.get_portfolio_value()
+            self.current_value = current_balance
+            
             # Load balance history
-            df = pd.read_csv(balance_file)
+            df = pd.read_csv('src/data/portfolio_balance.csv')
             if df.empty:
-                cprint("⚠️ Balance history file is empty", "white", "on_yellow")
+                cprint("🌙 No balance history found - logging initial balance", "yellow")
                 return False
-                
-            # Convert timestamps
+
+            # Get the balance from MAX_LOSS_GAIN_CHECK_HOURS ago
+            current_time = pd.Timestamp.now()
             df['timestamp'] = pd.to_datetime(df['timestamp'])
-            current_time = datetime.now()
+            old_df = df[df['timestamp'] <= current_time - pd.Timedelta(hours=MAX_LOSS_GAIN_CHECK_HOURS)]
             
-            # Debug info
-            cprint("\n📅 Balance History:", "white", "on_blue")
-            for _, row in df.iterrows():
-                time_ago = current_time - row['timestamp']
-                hours_ago = time_ago.total_seconds() / 3600
-                print(f"  • {row['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} ({hours_ago:.1f}h ago): ${row['balance']:.2f}")
-            
-            self.current_value = self.get_portfolio_value()
-            
-            # Get the starting balance from the check period
-            check_time = current_time - timedelta(hours=config.MAX_LOSS_GAIN_CHECK_HOURS)
-            cprint(f"\n⏰ Time Windows:", "white", "on_blue")
-            cprint(f"  • Current Time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}", "white", "on_blue")
-            cprint(f"  • Looking Back To: {check_time.strftime('%Y-%m-%d %H:%M:%S')} ({config.MAX_LOSS_GAIN_CHECK_HOURS}h ago)", "white", "on_blue")
-            
-            # Get balances within our time window
-            valid_balances = df[df['timestamp'] >= check_time]
-            
-            if valid_balances.empty:
-                cprint(f"\n⚠️ No balance found in last {config.MAX_LOSS_GAIN_CHECK_HOURS}h", "white", "on_yellow")
-                cprint(f"💡 Using earliest available balance as baseline", "white", "on_blue")
-                self.start_balance = df.iloc[0]['balance']
+            if old_df.empty:
+                cprint("🌙 No balance data found from check period - using earliest available", "yellow")
+                start_balance = df.iloc[0]['balance']
                 start_time = df.iloc[0]['timestamp']
             else:
-                # Use the oldest balance within our window (closest to 12h ago)
-                self.start_balance = valid_balances.iloc[0]['balance']
-                start_time = valid_balances.iloc[0]['timestamp']
+                # Use the most recent balance that's at least MAX_LOSS_GAIN_CHECK_HOURS old
+                start_balance = old_df.iloc[-1]['balance']
+                start_time = old_df.iloc[-1]['timestamp']
+            
+            self.start_balance = start_balance
+
+            # Calculate absolute and percentage changes
+            absolute_change = current_balance - start_balance
+            percent_change = ((current_balance - start_balance) / start_balance) * 100
+
+            # Print current status and limits
+            cprint("\n📊 Portfolio Status:", "cyan")
+            cprint(f"🌙 Starting Balance: ${start_balance:.2f} (from {start_time.strftime('%Y-%m-%d %H:%M:%S')})", "cyan")
+            cprint(f"🌙 Current Balance: ${current_balance:.2f} (Live)", "cyan")
+            cprint(f"🌙 Absolute Change: ${absolute_change:.2f}", "cyan")
+            cprint(f"🌙 Percent Change: {percent_change:.4f}%", "cyan")
+
+            cprint("\n🎯 Current Limits:", "yellow")
+            if USE_PERCENTAGE:
+                cprint(f"📉 Max Loss: {MAX_LOSS_PERCENT:.4f}%", "red")
+                cprint(f"📈 Max Gain: {MAX_GAIN_PERCENT:.4f}%", "green")
+            else:
+                cprint(f"📉 Max Loss: ${MAX_LOSS_USD:.2f}", "red")
+                cprint(f"📈 Max Gain: ${MAX_GAIN_USD:.2f}", "green")
+
+            # Check limits based on configuration
+            limit_hit = False
+            limit_type = None
+            
+            if USE_PERCENTAGE:
+                cprint(f"\n🔍 Checking Percentage Limits:", "cyan")
+                cprint(f"Current Change: {percent_change:.4f}% | Loss Limit: -{MAX_LOSS_PERCENT:.4f}% | Gain Limit: +{MAX_GAIN_PERCENT:.4f}%", "cyan")
                 
-            time_diff = current_time - start_time
-            hours_diff = time_diff.total_seconds() / 3600
-            
-            cprint(f"\n🎯 Monitoring Window:", "white", "on_blue")
-            cprint(f"  • Using Balance From: {start_time.strftime('%Y-%m-%d %H:%M:%S')} ({hours_diff:.1f}h ago)", "white", "on_blue")
-            cprint(f"  • Until Current Time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}", "white", "on_blue")
-            
-            # Calculate limits
-            max_loss_limit = self.start_balance - config.DAILY_MAX_LOSS
-            max_gain_limit = self.start_balance + config.DAILY_MAX_GAIN
-            
-            cprint(f"\n📊 Portfolio Limits:", "white", "on_blue")
-            cprint(f"  • Start Balance: ${self.start_balance:.2f} (from {hours_diff:.1f}h ago)", "white", "on_blue")
-            cprint(f"  • Current Value: ${self.current_value:.2f}", "white", "on_blue")
-            cprint(f"  • Loss Limit b4 exiting: ${max_loss_limit:.2f} (start - ${config.DAILY_MAX_LOSS})", "white", "on_blue")
-            cprint(f"  • Gain Limit b4 exiting: ${max_gain_limit:.2f} (start + ${config.DAILY_MAX_GAIN})", "white", "on_blue")
-            
-            # Check if we need to close positions
-            if self.current_value <= max_loss_limit:
-                cprint(f"🚨 Max loss limit reached! (${self.current_value:.2f} < ${max_loss_limit:.2f})", "white", "on_red")
-                if self.should_override_limit("loss"):
-                    cprint("🤖 Risk Agent suggests keeping positions open", "white", "on_yellow")
+                if percent_change <= -MAX_LOSS_PERCENT:
+                    cprint(f"\n⚠️ Max Loss Hit! ({percent_change:.4f}% loss exceeds {MAX_LOSS_PERCENT:.4f}% limit)", "red")
+                    limit_hit = True
+                    limit_type = "loss"
+                elif percent_change >= MAX_GAIN_PERCENT:
+                    cprint(f"\n🎯 Max Gain Hit! ({percent_change:.4f}% gain exceeds {MAX_GAIN_PERCENT:.4f}% limit)", "green")
+                    limit_hit = True
+                    limit_type = "gain"
+            else:
+                cprint(f"\n🔍 Checking USD Limits:", "cyan")
+                cprint(f"Current Change: ${absolute_change:.2f} | Loss Limit: -${MAX_LOSS_USD:.2f} | Gain Limit: +${MAX_GAIN_USD:.2f}", "cyan")
+                
+                if absolute_change <= -MAX_LOSS_USD:
+                    cprint(f"\n⚠️ Max Loss Hit! (${absolute_change:.2f} loss exceeds ${MAX_LOSS_USD:.2f} limit)", "red")
+                    limit_hit = True
+                    limit_type = "loss"
+                elif absolute_change >= MAX_GAIN_USD:
+                    cprint(f"\n🎯 Max Gain Hit! (${absolute_change:.2f} gain exceeds ${MAX_GAIN_USD:.2f} limit)", "green")
+                    limit_hit = True
+                    limit_type = "gain"
+
+            if limit_hit:
+                cprint("\n🤖 Consulting Risk Agent AI...", "yellow")
+                if self.should_override_limit(limit_type):
+                    cprint("\n✨ Risk Agent suggests keeping positions open", "green")
                     return False
                 else:
-                    cprint("🛡️ Risk Agent confirms - closing all positions", "white", "on_red")
+                    cprint("\n🔄 Risk Agent confirms - closing all monitored positions", "red")
                     self.close_all_positions()
                     return True
-                    
-            elif self.current_value >= max_gain_limit:
-                cprint(f"🎉 Max gain limit reached! (${self.current_value:.2f} > ${max_gain_limit:.2f})", "white", "on_green")
-                if self.should_override_limit("gain"):
-                    cprint("🤖 Risk Agent suggests keeping positions open", "white", "on_yellow")
-                    return False
-                else:
-                    cprint("🛡️ Risk Agent confirms - closing all positions", "white", "on_green")
-                    self.close_all_positions()
-                    return True
-                    
+
             return False
-            
+
         except Exception as e:
-            cprint(f"❌ Error checking limits: {str(e)}", "white", "on_red")
-            cprint(f"🔍 Debug info:", "white", "on_yellow")
-            if 'df' in locals():
-                cprint("DataFrame contents:", "white", "on_yellow")
-                print(df.to_string())
+            cprint(f"🌙 Error checking PnL limits: {str(e)}", "red")
             return False
 
     def close_all_positions(self):
-        """Close all positions except USDC and SOL"""
+        """Close all monitored positions except USDC and SOL"""
         try:
-            cprint("\n🔄 Closing all positions...", "white", "on_cyan")
+            cprint("\n🔄 Closing monitored positions...", "white", "on_cyan")
             
             # Get all positions
             positions = n.fetch_wallet_holdings_og(address)
             
-            # Filter out excluded tokens
-            positions = positions[~positions['Mint Address'].isin(EXCLUDED_TOKENS)]
+            # Filter for tokens that are both in MONITORED_TOKENS and not in EXCLUDED_TOKENS
+            positions = positions[
+                positions['Mint Address'].isin(MONITORED_TOKENS) & 
+                ~positions['Mint Address'].isin(EXCLUDED_TOKENS)
+            ]
             
             if positions.empty:
-                cprint("📝 No positions to close (excluding USDC and SOL)", "white", "on_blue")
+                cprint("📝 No monitored positions to close", "white", "on_blue")
                 return
                 
-            # Close each position
+            # Close each monitored position
             for _, row in positions.iterrows():
                 token = row['Mint Address']
                 value = row['USD Value']
                 
-                cprint(f"\n💰 Closing position: {token} (${value:.2f})", "white", "on_cyan")
+                cprint(f"\n💰 Closing monitored position: {token} (${value:.2f})", "white", "on_cyan")
                 try:
                     n.chunk_kill(token, max_usd_order_size, slippage)
                     cprint(f"✅ Successfully closed position for {token}", "white", "on_green")
                 except Exception as e:
                     cprint(f"❌ Error closing position for {token}: {str(e)}", "white", "on_red")
                     
-            cprint("\n✨ All positions closed (except USDC and SOL)", "white", "on_green")
+            cprint("\n✨ All monitored positions closed", "white", "on_green")
             
         except Exception as e:
             cprint(f"❌ Error in close_all_positions: {str(e)}", "white", "on_red")

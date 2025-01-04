@@ -31,65 +31,47 @@ ACTIVE_AGENTS = {
 }
 
 def run_agents():
-    """Initialize and run all active agents"""
-    agents = {}
-    
+    """Run the trading and risk agents in sequence"""
     try:
-        # Initialize active agents
-        if ACTIVE_AGENTS.get('risk'):
-            cprint("🛡️ Initializing Risk Agent...", "white", "on_blue")
-            agents['risk'] = RiskAgent()
-            
-        if ACTIVE_AGENTS.get('trading'):
-            cprint("🤖 Initializing Trading Agent...", "white", "on_blue")
-            agents['trading'] = TradingAgent()
-        
-        # Main loop
+        trading_agent = TradingAgent() if ACTIVE_AGENTS['trading'] else None
+        risk_agent = RiskAgent() if ACTIVE_AGENTS['risk'] else None
+
         while True:
-            current_time = datetime.now()
-            cprint(f"\n⏰ Agent Run Starting at {current_time.strftime('%Y-%m-%d %H:%M:%S')}", "white", "on_green")
-            
-            # First Risk Check
-            if 'risk' in agents:
-                cprint("\n🛡️ Running Initial Risk Check...", "white", "on_blue")
-                # Log balance at 8 AM
-                if current_time.hour == 8 and current_time.minute < 15:
-                    cprint("\n⏰ 8 AM - Logging daily starting balance...", "white", "on_blue")
-                    agents['risk'].log_daily_balance()
+            # Only run risk checks if risk agent is active
+            if risk_agent:
+                cprint("\n🛡️ Running Risk Agent...", "cyan")
+                risk_agent.log_daily_balance()
                 
-                # Check PnL limits
-                limit_hit = agents['risk'].check_pnl_limits()
-                if limit_hit:
-                    cprint("⚠️ PnL limit hit - Balance changed from ${:.2f} to ${:.2f} - skipping trading until next check".format(
-                        agents['risk'].start_balance,
-                        agents['risk'].current_value
-                    ), "white", "on_yellow")
-                    time.sleep(5)  # Sleep 5 minutes
+                # Check if PnL limits are hit
+                if risk_agent.check_pnl_limits():
+                    limit_type = "percentage" if USE_PERCENTAGE else "USD"
+                    cprint(f"\n⚠️ PnL limit hit ({limit_type}-based) - Balance changed from ${risk_agent.start_balance:.2f} to ${risk_agent.current_value:.2f}", "red")
+                    cprint("Skipping trading until next check...", "yellow")
+                    time.sleep(60 * SLEEP_BETWEEN_RUNS_MINUTES)
                     continue
-            
-            # Run trading agent if no limits hit
-            if 'trading' in agents:
-                cprint("\n🤖 Running Trading Agent...", "white", "on_blue")
-                agents['trading'].run_trading_cycle()
-                
-                # Second Risk Check after trading
-                if 'risk' in agents:
-                    cprint("\n🛡️ Running Post-Trade Risk Check...", "white", "on_blue")
-                    limit_hit = agents['risk'].check_pnl_limits()
-                    if limit_hit:
-                        cprint("⚠️ PnL limit hit after trading - monitoring closely", "white", "on_yellow")
-            
-            # Add more agents here as we build them
-            
+
+            # Run trading agent if it's active (and if risk checks pass or risk agent is off)
+            if trading_agent:
+                cprint("\n🤖 Running Trading Agent...", "cyan")
+                trading_agent.run_trading_cycle()
+
+                # Run risk agent again after trading if it's active
+                if risk_agent:
+                    cprint("\n🛡️ Running Risk Agent Post-Trade...", "cyan")
+                    if risk_agent.check_pnl_limits():
+                        limit_type = "percentage" if USE_PERCENTAGE else "USD"
+                        cprint(f"\n⚠️ PnL limit hit ({limit_type}-based) - Balance changed from ${risk_agent.start_balance:.2f} to ${risk_agent.current_value:.2f}", "red")
+
+            # Sleep until next cycle
             next_run = datetime.now() + timedelta(minutes=SLEEP_BETWEEN_RUNS_MINUTES)
-            cprint(f"\n⏳ Agent Cycle Complete. Next run at {next_run.strftime('%Y-%m-%d %H:%M:%S')}", "white", "on_green")
-            time.sleep(SLEEP_BETWEEN_RUNS_MINUTES * 60)  # Convert minutes to seconds
-            
+            cprint(f"\n😴 Sleeping until {next_run.strftime('%H:%M:%S')}", "cyan")
+            time.sleep(60 * SLEEP_BETWEEN_RUNS_MINUTES)
+
     except KeyboardInterrupt:
-        cprint("\n👋 Moon Dev AI Agent System shutting down gracefully...", "white", "on_blue")
+        cprint("\n👋 Gracefully shutting down...", "yellow")
     except Exception as e:
-        cprint(f"\n❌ Error in main loop: {str(e)}", "white", "on_red")
-        cprint("🔧 Moon Dev suggests checking the logs and trying again!", "white", "on_blue")
+        cprint(f"\n❌ Error in main loop: {str(e)}", "red")
+        raise
 
 if __name__ == "__main__":
     cprint("\n🌙 Moon Dev AI Agent Trading System Starting...", "white", "on_blue")
