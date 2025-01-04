@@ -4,10 +4,10 @@
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
-This project explores the potential of [artificial financial intelligence](https://www.afi.xyz) - a focused implementation of AI for trading and investing research.
+This project explores the potential of <a href="https://www.afi.xyz" target="_blank">artificial financial intelligence</a> - a focused implementation of AI for trading and investing research.
 
 ## 🎯 Vision
-We're researching AI agents for trading that may eventually leverage [AFI](https://www.afi.xyz). With 4 years of experience training humans through our [bootcamp](https://algotradecamp.com), we're exploring where AI agents might complement human trading operations. This is experimental research, not a profitable trading solution.
+We're researching AI agents for trading that may eventually leverage <a href="https://www.afi.xyz" target="_blank">AFI</a>. With 4 years of experience training humans through our <a href="https://algotradecamp.com" target="_blank">bootcamp</a>, we're exploring where AI agents might complement human trading operations. This is experimental research, not a profitable trading solution.
 
 ## 💡 Concept
 AI agents might help address common trading challenges:
@@ -62,7 +62,7 @@ Researching concepts like:
 8. Past performance does not indicate future results
 
 ## 👂 Looking for Updates?
-Project updates will be posted on [moondev.com](http://moondev.com) in the AI Agents for Trading Section.
+Project updates will be posted on <a href="http://moondev.com" target="_blank">moondev.com</a> in the AI Agents for Trading Section.
 
 ## 📜 Detailed Disclaimer
 The content presented is for educational and informational purposes only and does not constitute financial advice. All trading involves risk and may not be suitable for all investors. You should carefully consider your investment objectives, level of experience, and risk appetite before investing.
@@ -74,9 +74,9 @@ Past performance is not indicative of future results. There is no guarantee that
 I am not a licensed financial advisor or a registered broker-dealer. Content & code is based on personal research perspectives and should not be relied upon as a guarantee of success in trading.
 
 ## 🔗 Links
-- Free Algo Trading Roadmap: [moondev.com](https://moondev.com)
-- Algo Trading Education: [algotradecamp.com](https://algotradecamp.com)
-- Business Contact [moon@algotradecamp.com](mailto:moon@algotradecamp.com)
+- Free Algo Trading Roadmap: <a href="https://moondev.com" target="_blank">moondev.com</a>
+- Algo Trading Education: <a href="https://algotradecamp.com" target="_blank">algotradecamp.com</a>
+- Business Contact <a href="mailto:moon@algotradecamp.com">moon@algotradecamp.com</a>
 
 
 ## Live Agents
