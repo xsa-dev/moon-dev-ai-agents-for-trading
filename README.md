@@ -87,10 +87,54 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 
 ## Live Agents
-- Trading Agent (found in src/agents/trading_agent.py): this is just an example trading agent that will collect data from the solana contract addresses that you put in the config (src/core/config.py) and then send to an llm in order to analyze that data. then make a decision (do nothing, buy or sell) and then execute the trade. this one is just an example and will not be profitable cause it has no strategy yet. 
-   - in the future adding a strategy that they can trade won't be that hard but i just wanted to get an example live and then start building out my most important agent which is my risk agent. managing risk is everything in trading and humans don't do it well, so that's why i am building the risk agent first. 
-   - training video: coming soon...
-   
+- Trading Agent (`trading_agent.py`): Example agent that analyzes token data via LLM to make basic trade decisions
+- Strategy Agent (`strategy_agent.py`): Manages and executes trading strategies placed in the strategies folder
+- Risk Agent (`risk_agent.py`): Monitors and manages portfolio risk, enforcing position limits and PnL thresholds
+
+## 🚀 Project Progress & Roadmap
+### Phase 1: Foundation ✅
+- [x] Project structure setup
+- [x] Environment variable configuration
+- [x] API key management
+- [x] Basic OHLCV data collection
+- [x] Multi-token monitoring setup
+- [x] Temporary data storage system
+- [x] Token display improvements
+
+### Phase 2: Core Trading Infrastructure 🚧
+- [x] ezbot.py that allows hand traders bot functions
+- [x] Market buy/sell functionality
+- [x] Position management
+- [x] Slippage control
+- [x] Transaction retry logic
+- [x] Risk management system
+- [ ] Portfolio-wide analysis
+- [ ] Advanced order types
+
+### Phase 3: Launch A Bunch of Agents to Learn 🤖
+- [x] Basic AI model setup
+- [x] Trading Agent Example
+- [x] Risk assessment agent
+- [ ] Entry/exit strategy agent - build a buying agent to optimize slippage etc and easy to implement into any agents
+- [ ] Sentiment analysis agent - use twikit package
+- [ ] Multi-agent coordination 
+- [ ] Portfolio optimization agent 
+
+### Phase 4: Advanced Features 🔮
+- [ ] Social sentiment integration
+- [ ] Hyperliquid Perp Trading
+- [ ] Hyperliquid Spot Trading 
+
+### Phase 5: Optimization & Scaling 🚀
+- [ ] Performance optimization
+- [ ] Multi-chain support
+- [ ] Emergency protocols
+
+### Shipped Features 📦
+1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
+1/3 - risk_agent.py: built out an ai agent to manage risk
+1/2 - trading_agent.py: built the first trading agent
+1/1 - first lines of code written
 
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
