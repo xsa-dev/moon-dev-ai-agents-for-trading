@@ -1,6 +1,8 @@
 # 🤖 AI AGENTS FOR TRADING
 
-<a href="https://www.moondev.com/"><img src="moondev.png" width="200" alt="Moon Dev"></a>
+<p align="center">
+  <a href="https://www.moondev.com/"><img src="moondev.png" width="200" alt="Moon Dev"></a>
+</p>
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
