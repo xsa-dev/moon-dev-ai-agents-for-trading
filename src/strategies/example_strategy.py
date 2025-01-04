@@ -1,76 +1,66 @@
 """
 🌙 Moon Dev's Example Strategy
-This is a template for creating custom strategies
+Simple Moving Average Crossover Strategy
 """
 
 from .base_strategy import BaseStrategy
 from src.config import MONITORED_TOKENS
 import pandas as pd
 from termcolor import cprint
+from src import nice_funcs as n
 
-class ExampleMeanReversionStrategy(BaseStrategy):
+class SimpleMAStrategy(BaseStrategy):
     def __init__(self):
         """Initialize the strategy"""
-        super().__init__("Example Mean Reversion")
-        self.lookback_periods = 20
+        super().__init__("Simple MA Crossover")
+        self.fast_ma = 20  # 20-period MA
+        self.slow_ma = 50  # 50-period MA
         
     def generate_signals(self) -> dict:
-        """Generate trading signals based on mean reversion"""
+        """Generate trading signals based on MA crossover"""
         try:
-            # This is just an example - replace with your own logic!
             for token in MONITORED_TOKENS:
-                # Get market data (implement your own data collection)
-                data = self._get_market_data(token)
-                if data is None:
+                # Get market data using nice_funcs
+                data = n.get_data(token, days_back=3, timeframe='15m')  
+                if data is None or data.empty:
                     continue
                     
-                # Calculate indicators
-                mean_price = data['close'].rolling(self.lookback_periods).mean()
-                std_dev = data['close'].rolling(self.lookback_periods).std()
-                current_price = data['close'].iloc[-1]
+                # Calculate moving averages
+                fast_ma = data['close'].rolling(self.fast_ma).mean()
+                slow_ma = data['close'].rolling(self.slow_ma).mean()
                 
-                # Calculate z-score
-                z_score = (current_price - mean_price.iloc[-1]) / std_dev.iloc[-1]
+                # Get latest values
+                current_fast = fast_ma.iloc[-1]
+                current_slow = slow_ma.iloc[-1]
+                prev_fast = fast_ma.iloc[-2]
+                prev_slow = slow_ma.iloc[-2]
                 
-                # Generate signal based on z-score
-                if z_score < -2:  # Oversold
-                    signal_strength = min(abs(z_score) / 4, 1)  # Normalize to 0-1
-                    signal = {
-                        'token': token,
-                        'signal': signal_strength,
-                        'direction': 'BUY',
-                        'metadata': {
-                            'strategy_type': 'mean_reversion',
-                            'z_score': float(z_score),
-                            'current_price': float(current_price),
-                            'mean_price': float(mean_price.iloc[-1]),
-                            'std_dev': float(std_dev.iloc[-1])
-                        }
+                # Check for crossover
+                signal = {
+                    'token': token,
+                    'signal': 0,
+                    'direction': 'NEUTRAL',
+                    'metadata': {
+                        'strategy_type': 'ma_crossover',
+                        'fast_ma': float(current_fast),
+                        'slow_ma': float(current_slow),
+                        'current_price': float(data['close'].iloc[-1])
                     }
-                elif z_score > 2:  # Overbought
-                    signal_strength = min(abs(z_score) / 4, 1)
-                    signal = {
-                        'token': token,
-                        'signal': signal_strength,
-                        'direction': 'SELL',
-                        'metadata': {
-                            'strategy_type': 'mean_reversion',
-                            'z_score': float(z_score),
-                            'current_price': float(current_price),
-                            'mean_price': float(mean_price.iloc[-1]),
-                            'std_dev': float(std_dev.iloc[-1])
-                        }
-                    }
-                else:
-                    signal = {
-                        'token': token,
-                        'signal': 0,
-                        'direction': 'NEUTRAL',
-                        'metadata': {
-                            'strategy_type': 'mean_reversion',
-                            'z_score': float(z_score)
-                        }
-                    }
+                }
+                
+                # Bullish crossover (fast crosses above slow)
+                if prev_fast <= prev_slow and current_fast > current_slow:
+                    signal.update({
+                        'signal': 1.0,
+                        'direction': 'BUY'
+                    })
+                
+                # Bearish crossover (fast crosses below slow)
+                elif prev_fast >= prev_slow and current_fast < current_slow:
+                    signal.update({
+                        'signal': 1.0,
+                        'direction': 'SELL'
+                    })
                 
                 # Validate and format signal
                 if self.validate_signal(signal):
@@ -81,17 +71,4 @@ class ExampleMeanReversionStrategy(BaseStrategy):
             
         except Exception as e:
             cprint(f"❌ Error generating signals: {str(e)}", "red")
-            return None
-            
-    def _get_market_data(self, token: str) -> pd.DataFrame:
-        """
-        Get market data for analysis
-        This is just a placeholder - implement your own data collection!
-        """
-        try:
-            # Implement your data collection logic here
-            # Should return DataFrame with OHLCV data
-            return pd.DataFrame()  # Placeholder
-        except Exception as e:
-            cprint(f"❌ Error getting market data: {str(e)}", "red")
             return None 

@@ -19,43 +19,24 @@
 - [ ] Portfolio-wide analysis
 - [ ] Advanced order types
 
-## Phase 3: AI Integration 🤖
+## Phase 3: Launch A Bunch of Agents to Learn 🤖
 - [x] Basic AI model setup
 - [x] Trading Agent Example
 - [x] Risk assessment agent
-- [ ] Entry/exit strategy agent
-- [ ] Sentiment analysis agent
-- [ ] Multi-agent coordination
-- [ ] Portfolio optimization agent
+- [ ] Entry/exit strategy agent - build a buying agent to optimize slippage etc and easy to implement into any agents. optimize timing, fees, slippage, etc. 
+- [ ] Sentiment analysis agent - use twikit package
+- [ ] Multi-agent coordination 
+- [ ] Portfolio optimization agent 
 
 ## Phase 4: Advanced Features 🔮
-- [ ] Real-time market analysis
 - [ ] Social sentiment integration
-- [ ] Advanced risk metrics
-- [ ] Performance analytics
-- [ ] Automated reporting
 - [ ] Hyperliquid Perp Trading
 - [ ] Hyperliquid Spot Trading 
 
 ## Phase 5: Optimization & Scaling 🚀
 - [ ] Performance optimization
 - [ ] Multi-chain support
-- [ ] Advanced portfolio strategies
-- [ ] Automated rebalancing
 - [ ] Emergency protocols
-
-## Current Focus 🎯
-- Enhancing risk agent with more market data analysis
-- Improving multi-token coordination
-- Developing portfolio analysis system
-- Implementing percentage-based max loss/tp
-
-## Future Considerations 🌠
-- Cross-chain integration
-- Advanced ML models
-- Real-time sentiment analysis
-- Automated strategy adjustment
-- Community integration
 
 ## Guides/Examples to make
 - [ ] how to use ezbot.py
@@ -66,5 +47,11 @@
 
 ## random features
 [] % based max loss / tp
+
+# shipped list
+1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
+1/3 - risk_agent.py: built out an ai agent to manage risk
+1/2 - trading_agent.py: built the first trading agent
+1/1 - first lines of code written
 
 *This roadmap is maintained by Moon Dev and serves as a guide for AI agents in understanding project progression* 🤖✨

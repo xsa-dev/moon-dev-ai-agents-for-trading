@@ -58,3 +58,13 @@ ohlcv_data/
 **/ohlcv_data/
 trading_history/
 **/trading_history/
+
+# Moon Dev's Private Strategies
+src/strategies/custom/private_*.py
+src/strategies/custom/secret_*.py
+src/strategies/custom/dev_*.py
+
+# Keep template files
+!src/strategies/custom/README.md
+!src/strategies/custom/__init__.py
+!src/strategies/custom/.gitkeep

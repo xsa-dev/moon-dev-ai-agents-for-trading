@@ -1,10 +1,18 @@
 # 🌙 Moon Dev's Custom Strategies Directory
 
-This directory is for your private trading strategies. Any strategy files placed here will be automatically discovered and loaded by the trading agent.
+This directory is for your trading strategies. Strategies with certain filename prefixes will be automatically ignored by git to keep them private.
+
+## Private Strategy Naming
+To keep a strategy private (not tracked by git), prefix the filename with:
+- `private_` (e.g., `private_my_strategy.py`)
+- `secret_` (e.g., `secret_alpha_strat.py`) 
+- `dev_` (e.g., `dev_test_strat.py`)
+
+These patterns are included in `.gitignore` so your private strategies won't be committed to the repository.
 
 ## Creating a Custom Strategy
 
-1. Create a new Python file in this directory (e.g., `my_strategy.py`)
+1. Create a new Python file in this directory (e.g., `private_my_strategy.py`)
 2. Import and inherit from the base strategy class:
 ```python
 from ..base_strategy import BaseStrategy
@@ -53,16 +61,16 @@ metadata = {
 ```
 
 ## Tips
-- Keep your strategies in this directory private
+- Use the naming patterns above to keep strategies private
 - Use the example strategy as a template
 - Implement proper error handling
 - Add detailed metadata for better LLM analysis
 - Use Moon Dev's utility functions from nice_funcs.py
 
-## Security
-- Add this directory to .gitignore to keep your strategies private
-- Never commit API keys or private keys
+## Security Notes
+- Never commit API keys or private keys in any file
 - Use environment variables for sensitive data
+- Double check your strategy filenames before committing
 
 ## Questions?
-Check out the example strategy or reach out to Moon Dev for help! 🚀 
+Check out the example strategy or reach out to Moon Dev for help! 🌙 🚀 

@@ -20,8 +20,8 @@ MONITORED_TOKENS = [
     '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump',    # 🌬️ FART
     # 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',    # 💵 USDC
     'HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',    # 🤖 AI16Z
-    'v62Jv9pwMTREWV9f6TetZfMafV254vo99p7HSF25BPr',     # 🎮 GG Solana
-    'KENJSUYLASHUMfHyy5o4Hp2FdNqZg1AsUPhfH2kYvEP',   # GRIFFAIN
+    # 'v62Jv9pwMTREWV9f6TetZfMafV254vo99p7HSF25BPr',     # 🎮 GG Solana
+    # 'KENJSUYLASHUMfHyy5o4Hp2FdNqZg1AsUPhfH2kYvEP',   # GRIFFAIN
     # '8x5VqbHA8D7NkD52uNuS5nnt3PwA3pLD34ymskeSo2Wn',    # 🧠 ZEREBRO
     # 'Df6yfrKC8kZE3KNkrHERKzAetSxbrWeniQfyJY4Jpump',    # 😎 CHILL GUY
     # 'ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY',    # 🌙 MOODENG
@@ -57,8 +57,8 @@ SLEEP_BETWEEN_RUNS_MINUTES = 15  # How long to sleep between agent runs 🕒
 USE_PERCENTAGE = False  # If True, use percentage-based limits. If False, use USD-based limits
 
 # USD-based limits (used if USE_PERCENTAGE is False)
-MAX_LOSS_USD = 1  # Maximum loss in USD before stopping trading
-MAX_GAIN_USD = 1  # Maximum gain in USD before stopping trading
+MAX_LOSS_USD = .001  # Maximum loss in USD before stopping trading
+MAX_GAIN_USD = .001  # Maximum gain in USD before stopping trading
 
 # Percentage-based limits (used if USE_PERCENTAGE is True)
 MAX_LOSS_PERCENT = 5  # Maximum loss as percentage (e.g., 20 = 20% loss)
@@ -75,7 +75,7 @@ sell_over = 1
 
 # Data collection settings 📈
 DAYSBACK_4_DATA = 3
-DATA_TIMEFRAME = '3m'  # 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 8H, 12H, 1D, 3D, 1W, 1M
+DATA_TIMEFRAME = '1H'  # 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 8H, 12H, 1D, 3D, 1W, 1M
 SAVE_OHLCV_DATA = False  # 🌙 Set to True to save data permanently, False will only use temp data during run
 
 # AI Model Settings 🤖
@@ -84,6 +84,18 @@ AI_MAX_TOKENS = 1024  # Max tokens for response
 AI_TEMPERATURE = 0.7  # Creativity vs precision (0-1)
 
 USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+
+# Trading Strategy Settings
+ENABLE_STRATEGIES = True  # Set this to True to use strategies
+STRATEGY_MIN_CONFIDENCE = 0.7  # Minimum confidence to act on strategy signals
+
+
+
+
+
+
+
+
 
 
 # Future variables (not active yet) 🔮
@@ -96,4 +108,3 @@ EXIT_ALL_POSITIONS = False
 DO_NOT_TRADE_LIST = ['777']
 CLOSED_POSITIONS_TXT = '777'
 minimum_trades_in_last_hour = 777
-

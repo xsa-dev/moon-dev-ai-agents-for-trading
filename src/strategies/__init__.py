@@ -3,6 +3,6 @@
 """
 
 from .base_strategy import BaseStrategy
-from .example_strategy import ExampleMeanReversionStrategy
 
-__all__ = ['BaseStrategy', 'ExampleMeanReversionStrategy'] 
+# We only need to export BaseStrategy - custom strategies will be loaded dynamically
+__all__ = ['BaseStrategy'] 
