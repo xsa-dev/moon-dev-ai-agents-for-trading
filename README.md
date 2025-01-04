@@ -22,7 +22,7 @@ While we use the RBI framework for strategy research, we're exploring AI agents 
 
 *There is no token associated with this project and there never will be. any token launched is not affiliated with this project, moon dev will never dm you. be careful. don't send funds anywhere*
 
-## Video Updates
+## Video Updates & Training
 i will place video updates here as often as possible. i'll also be working on making shorter written and video documentation as features get solidified.
 - [1/1/25] [Day 1: Building The AI Agent Infastructure](https://www.youtube.com/watch?v=0-UfinNUfrI)
 - [1/2/25] [Building out first trading agent](https://www.youtube.com/watch?v=Grg2Sir5vOY)
