@@ -74,8 +74,10 @@ Past performance is not indicative of future results. There is no guarantee that
 I am not a licensed financial advisor or a registered broker-dealer. Content & code is based on personal research perspectives and should not be relied upon as a guarantee of success in trading.
 
 ## 🔗 Links
-- Trading Education: [https://algotradecamp.com](https://algotradecamp.com)
-- Business
+- Free Algo Trading Roadmap: [moondev.com](https://moondev.com)
+- Algo Trading Education: [algotradecamp.com](https://algotradecamp.com)
+- Business Contact [moon@algotradecamp.com](mailto:moon@algotradecamp.com)
+
 
 ## Live Agents
 - Trading Agent (found in src/agents/trading_agent.py): this is just an example trading agent that will collect data from the solana contract addresses that you put in the config (src/core/config.py) and then send to an llm in order to analyze that data. then make a decision (do nothing, buy or sell) and then execute the trade. this one is just an example and will not be profitable cause it has no strategy yet. 
