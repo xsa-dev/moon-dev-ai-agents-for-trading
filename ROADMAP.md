@@ -54,4 +54,8 @@
 1/2 - trading_agent.py: built the first trading agent
 1/1 - first lines of code written
 
+## 🎥 Video Tutorials & Project Updates
+- [1/1/25] [Moon Dev AI Trading System Overview](https://www.youtube.com/watch?v=0-UfinNUfrI)
+- [1/2/25] [Trading System Development Progress](https://www.youtube.com/watch?v=Grg2Sir5vOY)
+
 *This roadmap is maintained by Moon Dev and serves as a guide for AI agents in understanding project progression* 🤖✨
