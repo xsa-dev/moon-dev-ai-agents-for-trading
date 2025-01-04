@@ -87,8 +87,9 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 *There is no token associated with this project and there never will be. any token launched is not affiliated with this project, moon dev will never dm you. be careful. don't send funds anywhere*
 
 ## Video Updates
-- [1/1/25] [Moon Dev AI Trading System Overview](https://www.youtube.com/watch?v=0-UfinNUfrI)
-- [1/2/25] [Trading System Development Progress](https://www.youtube.com/watch?v=Grg2Sir5vOY)
+# i will place video updates here as often as possible. i'll also be working on making shorter written and video documentation as features get solidified.
+- [1/1/25] [Day 1: Building The AI Agent Infastructure](https://www.youtube.com/watch?v=0-UfinNUfrI)
+- [1/2/25] [Building out first trading agent](https://www.youtube.com/watch?v=Grg2Sir5vOY)
 
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
