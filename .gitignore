@@ -68,3 +68,6 @@ src/strategies/custom/dev_*.py
 !src/strategies/custom/README.md
 !src/strategies/custom/__init__.py
 !src/strategies/custom/.gitkeep
+
+/.gitattributes
+.gitattributes
