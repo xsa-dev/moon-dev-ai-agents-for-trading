@@ -26,8 +26,8 @@ load_dotenv()
 # Agent Configuration
 ACTIVE_AGENTS = {
     'risk': True,      # Risk management agent
-    'trading': True,   # LLM trading agent
-    'strategy': True,  # Strategy-based trading agent
+    'trading': False,   # LLM trading agent
+    'strategy': False,  # Strategy-based trading agent
     # Add more agents here as we build them:
     # 'sentiment': False,  # Future sentiment analysis agent
     # 'portfolio': False,  # Future portfolio optimization agent

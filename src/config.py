@@ -3,11 +3,6 @@
 Built with love by Moon Dev 🚀
 """
 
-# 🔑 API Configuration
-AI_MODEL = "claude-3-opus-20240229"
-AI_MAX_TOKENS = 4096
-AI_TEMPERATURE = 0.7
-
 # 💰 Trading Configuration
 USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"  # Never trade or close
 SOL_ADDRESS = "So11111111111111111111111111111111111111111"   # Never trade or close
@@ -34,7 +29,7 @@ tokens_to_trade = MONITORED_TOKENS  # Using the same list for trading
 
 # Token and wallet settings
 symbol = '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump'
-address = '4wgfCBf2WwLSRKLef9iW7JXZ2AfkxUxGM4XcKpHm3Sin'
+address = '4wgfCBf2WwLSRKLef9iW7JXZ2AfkxUxGM4XcKpHm3Sin' # YOUR WALLET ADDRESS HERE
 
 # Position sizing 🎯
 usd_size = 25  # Size of position to hold
@@ -45,27 +40,27 @@ slippage = 199  # Slippage settings
 # Risk Management Settings 🛡️
 CASH_PERCENTAGE = 20  # Minimum % to keep in USDC as safety buffer (0-100)
 MAX_POSITION_PERCENTAGE = 30  # Maximum % allocation per position (0-100)
-STOPLOSS_PRICE = 1
-BREAKOUT_PRICE = .0001
+STOPLOSS_PRICE = 1 # NOT USED YET 1/5/25    
+BREAKOUT_PRICE = .0001 # NOT USED YET 1/5/25
 SLEEP_AFTER_CLOSE = 600  # Prevent overtrading
 
 MAX_LOSS_GAIN_CHECK_HOURS = 12  # How far back to check for max loss/gain limits (in hours)
 SLEEP_BETWEEN_RUNS_MINUTES = 15  # How long to sleep between agent runs 🕒
 
 
-# Max Loss/Gain Settings
+# Max Loss/Gain Settings FOR RISK AGENT 1/5/25
 USE_PERCENTAGE = False  # If True, use percentage-based limits. If False, use USD-based limits
 
 # USD-based limits (used if USE_PERCENTAGE is False)
-MAX_LOSS_USD = .001  # Maximum loss in USD before stopping trading
-MAX_GAIN_USD = .001  # Maximum gain in USD before stopping trading
+MAX_LOSS_USD = 25  # Maximum loss in USD before stopping trading
+MAX_GAIN_USD = 25 # Maximum gain in USD before stopping trading
 
 # Percentage-based limits (used if USE_PERCENTAGE is True)
 MAX_LOSS_PERCENT = 5  # Maximum loss as percentage (e.g., 20 = 20% loss)
 MAX_GAIN_PERCENT = 5  # Maximum gain as percentage (e.g., 50 = 50% gain)
 
 # Transaction settings ⚡
-slippage = 199  # 50% slippage, 500 = 5% and 50 = .5% slippage
+slippage = 199  # 500 = 5% and 50 = .5% slippage
 PRIORITY_FEE = 100000  # ~0.02 USD at current SOL prices
 orders_per_open = 3  # Multiple orders for better fill rates
 
@@ -83,9 +78,7 @@ AI_MODEL = "claude-3-haiku-20240307"  # Claude model to use: claude-3-haiku-2024
 AI_MAX_TOKENS = 1024  # Max tokens for response
 AI_TEMPERATURE = 0.7  # Creativity vs precision (0-1)
 
-USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-
-# Trading Strategy Settings
+# Trading Strategy Agent Settings - MAY NOT BE USED YET 1/5/25
 ENABLE_STRATEGIES = True  # Set this to True to use strategies
 STRATEGY_MIN_CONFIDENCE = 0.7  # Minimum confidence to act on strategy signals
 
