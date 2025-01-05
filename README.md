@@ -71,7 +71,7 @@ Researching concepts like:
 8. Past performance does not indicate future results
 
 ## 👂 Looking for Updates?
-Project updates will be posted on [moondev.com](http://moondev.com) in the AI Agents for Trading Section.
+Project updates will be posted in discord, join here: [moondev.com](http://moondev.com) 
 
 ## 📜 Detailed Disclaimer
 The content presented is for educational and informational purposes only and does not constitute financial advice. All trading involves risk and may not be suitable for all investors. You should carefully consider your investment objectives, level of experience, and risk appetite before investing.
@@ -138,6 +138,41 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - [x] 1/3 - risk_agent.py: built out an ai agent to manage risk
 - [x] 1/2 - trading_agent.py: built the first trading agent 
 - [x] 1/1 - first lines of code written
+
+## 🚀 Quick Start Guide
+
+1. ⭐ **Star the Repo**
+   - Click the star button to save it to your GitHub favorites
+
+2. 🍴 **Fork the Repo**
+   - Fork to your GitHub account to get your own copy
+   - This lets you make changes and track updates
+
+3. 💻 **Open in Your IDE**
+   - Clone to your local machine
+   - Recommended: Use [Cursor](https://www.cursor.com/) or [Warp](https://codeium.com/) for AI-enabled coding
+
+4. 🔑 **Set Environment Variables**
+   - Check `.env.example` for required variables
+   - Create a copy of above and name it `.env` file with your keys:
+     - Anthropic API key
+     - Other trading API keys
+   - ⚠️ Never commit or share your API keys!
+
+5. 🤖 **Customize Agent Prompts**
+   - Navigate to `/agents` folder
+   - Modify LLM prompts to fit your needs
+   - Each agent has configurable parameters
+
+6. 📈 **Implement Your Strategies**
+   - Add your strategies to `/strategies` folder
+   - Remember: Out-of-box code is NOT profitable
+   - Thorough testing required before live trading
+
+7. 🏃‍♂️ **Run the System**
+   - Execute via `main.py`
+   - Toggle agents on/off as needed
+   - Monitor logs for performance
 
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
