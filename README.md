@@ -150,7 +150,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 3. 💻 **Open in Your IDE**
    - Clone to your local machine
-   - Recommended: Use [Cursor](https://www.cursor.com/) or [Warp](https://codeium.com/) for AI-enabled coding
+   - Recommended: Use [Cursor](https://www.cursor.com/) or [Windsurfer](https://codeium.com/) for AI-enabled coding
 
 4. 🔑 **Set Environment Variables**
    - Check `.env.example` for required variables
