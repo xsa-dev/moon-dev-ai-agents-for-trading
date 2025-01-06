@@ -3,18 +3,6 @@
 Built with love by Moon Dev 🚀
 """
 
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-# 🔑 API Configuration
-MOONDEV_API_KEY = os.getenv('MOONDEV_API_KEY')  # Never print this!
-AI_MODEL = "claude-3-opus-20240229"
-AI_MAX_TOKENS = 4096
-AI_TEMPERATURE = 0.7
-
 # 💰 Trading Configuration
 USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"  # Never trade or close
 SOL_ADDRESS = "So11111111111111111111111111111111111111111"   # Never trade or close
