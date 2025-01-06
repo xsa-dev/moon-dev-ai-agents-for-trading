@@ -107,6 +107,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - [x] Multi-token monitoring setup
 - [x] Temporary data storage system
 - [x] Token display improvements
+- [x] Market Data API Integration (OI, Liquidations, Funding)
 
 ### Phase 2: Core Trading Infrastructure 🚧
 - [x] ezbot.py that allows hand traders bot functions
@@ -139,6 +140,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 ### Shipped Features 📦
 
+- [x] 1/6 - Market Data API: Added comprehensive API for liquidations, funding rates, open interest, and copybot data
 - [x] 1/5 - created a documentation training video with a full walkthrough of this github (releasing jan 7th)
 - [x] 1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
 - [x] 1/3 - risk_agent.py: built out an ai agent to manage risk
@@ -182,3 +184,14 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
+
+## 🔌 API Features
+The Moon Dev Market Data API provides real-time access to:
+- 📊 Liquidation Data
+- 💰 Funding Rates
+- 📈 Open Interest (Symbol & Total Market)
+- 🆕 New Token Launches
+- 🤖 CopyBot Data & Follow Lists
+- 📝 Recent Market Transactions
+
+Check out [API Documentation](docs/api.md) for detailed usage instructions.
