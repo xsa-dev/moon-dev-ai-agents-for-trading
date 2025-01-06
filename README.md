@@ -4,12 +4,16 @@
   <a href="https://www.moondev.com/"><img src="moondev.png" width="300" alt="Moon Dev"></a>
 </p>
 
-**⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
-
 This project explores the potential of [artificial financial intelligence](https://www.afi.xyz) - a focused implementation of AI for trading and investing research.
+
+
+**⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
 ## 🎯 Vision
 We're researching AI agents for trading that will eventually leverage [AFI](https://www.afi.xyz). With 4 years of experience training humans through our [bootcamp](https://algotradecamp.com), we're exploring where AI agents might complement human trading operations, and later replace trading human operations. This is experimental research, not a profitable trading solution.
+
+## 🧠 Hypothesis
+AI agents will be able to build a better quant portfolio than humans. i've spent the last 4 years building quant systems & training others to do so. 2025 is about replicating that success but with ai agents doing it instead of me. on jan 1, 2026 i will release a paper of my findings after a full year of testing ai agents in quant vs the last 4 years of humans.
 
 ## 💡 Concept
 AI agents might help address common trading challenges:
