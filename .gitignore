@@ -71,3 +71,6 @@ src/strategies/custom/dev_*.py
 
 /.gitattributes
 .gitattributes
+moon-dev-ai-agents-for-trading/src/dev
+src/dev
+src/agents/api_data
