@@ -29,10 +29,8 @@ While we use the RBI framework for strategy research, we're exploring AI agents 
 *There is no token associated with this project and there never will be. any token launched is not affiliated with this project, moon dev will never dm you. be careful. don't send funds anywhere*
 
 ## Video Updates & Training
-i will place video updates here as often as possible. i'll also be working on making shorter written and video documentation as features get solidified.
-- [1/1/25] [day 1: building The AI Agent Infastructure](https://www.youtube.com/watch?v=0-UfinNUfrI)
-- [1/2/25] [building out first trading agent, the risk agent](https://www.youtube.com/watch?v=Grg2Sir5vOY)
-- [1/3/25] [building a trading agent that makes decisions based on data](https://www.youtube.com/watch?v=uharK1SxXB0)
+all the video updates are consolidated in the below playlist on youtube
+📀 https://www.youtube.com/playlist?list=PLXrNVMjRZUJg4M4uz52iGd1LhXXGVbIFz
 
 ## 🗺️ Research Roadmap
 
@@ -140,6 +138,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 ### Shipped Features 📦
 
+- [x] 1/7 - CopyBot Agent: Added AI agent to analyze copybot portfolio and optimize position sizes
 - [x] 1/6 - Market Data API: Added comprehensive API for liquidations, funding rates, open interest, and copybot data
 - [x] 1/5 - created a documentation training video with a full walkthrough of this github (releasing jan 7th)
 - [x] 1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
