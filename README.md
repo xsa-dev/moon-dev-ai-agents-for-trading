@@ -139,7 +139,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 ### Shipped Features 📦
 
-- [x] 1/7 - CopyBot Agent: Added AI agent to analyze copybot portfolio and optimize position sizes
+- [x] 1/7 - CopyBot Agent: Added AI agent to analyze copybot portfolio and decide on wether it should take a position on their account 
 - [x] 1/6 - Market Data API: Added comprehensive API for liquidations, funding rates, open interest, and copybot data
 - [x] 1/5 - created a documentation training video with a full walkthrough of this github (releasing jan 7th)
 - [x] 1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
