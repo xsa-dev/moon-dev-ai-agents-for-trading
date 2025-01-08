@@ -2,7 +2,7 @@
 🐳 Moon Dev's Whale Watcher
 Built with love by Moon Dev 🚀
 
-Dave the Whale Agent tracks open interest changes across different timeframes and announces market moves via OpenAI TTS.
+Dez the Whale Agent tracks open interest changes across different timeframes and announces market moves via OpenAI TTS.
 """
 
 import os
@@ -17,26 +17,28 @@ from src import nice_funcs as n
 from src.agents.api import MoonDevAPI
 from collections import deque
 from src.agents.base_agent import BaseAgent
+import traceback
+import numpy as np
+
+# Get the project root directory
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
-CHECK_INTERVAL_MINUTES = 1  # How often to check OI (can be set to 0.5 for 30 seconds)
+CHECK_INTERVAL_MINUTES = 5  # How often to check OI (can be set to 0.5 for 30 seconds)
 LOOKBACK_PERIODS = {
-    '5min': 5,
-    '1hour': 60,
-    '4hours': 240,
-    '24hours': 1440
+    '15min': 15  # Simplified to just 15 minutes
 }
 
 # Voice settings
 VOICE_MODEL = "tts-1"  # or tts-1-hd for higher quality
-VOICE_NAME = "alloy"   # Options: alloy, echo, fable, onyx, nova, shimmer
-VOICE_SPEED = 1.0      # 0.25 to 4.0
+VOICE_NAME = "shimmer"   # Options: alloy, echo, fable, onyx, nova, shimmer
+VOICE_SPEED = 1      # 0.25 to 4.0
 
 class WhaleAgent(BaseAgent):
-    """Dave the Whale Watcher 🐋"""
+    """Dez the Whale Watcher 🐋"""
     
     def __init__(self):
-        """Initialize Dave the Whale Agent"""
+        """Initialize Dez the Whale Agent"""
         super().__init__('whale')  # Initialize base agent with type
         
         load_dotenv()
@@ -50,8 +52,8 @@ class WhaleAgent(BaseAgent):
         self.api = MoonDevAPI()
         
         # Create data directories if they don't exist
-        self.audio_dir = Path("src/audio")
-        self.data_dir = Path("src/data")
+        self.audio_dir = PROJECT_ROOT / "src" / "audio"
+        self.data_dir = PROJECT_ROOT / "src" / "data"
         self.audio_dir.mkdir(parents=True, exist_ok=True)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
@@ -59,18 +61,27 @@ class WhaleAgent(BaseAgent):
         self.history_file = self.data_dir / "oi_history.csv"
         self.load_history()
         
-        print("🐋 Dave the Whale Agent initialized!")
-        self._announce("Dave the Whale Agent is now watching the markets!")
+        print("🐋 Dez the Whale Agent initialized!")
         
     def load_history(self):
-        """Load or initialize historical OI data"""
+        """Load or initialize historical OI data with change tracking"""
         try:
             if self.history_file.exists():
-                self.oi_history = pd.read_csv(self.history_file)
-                self.oi_history['timestamp'] = pd.to_datetime(self.oi_history['timestamp'])
-                print(f"📈 Loaded {len(self.oi_history)} historical OI records")
+                df = pd.read_csv(self.history_file)
+                
+                # Check if we have the new column format
+                required_columns = ['timestamp', 'btc_oi', 'eth_oi', 'total_oi', 'btc_change_pct', 'eth_change_pct', 'total_change_pct']
+                if all(col in df.columns for col in required_columns):
+                    self.oi_history = df
+                    self.oi_history['timestamp'] = pd.to_datetime(self.oi_history['timestamp'])
+                    print(f"📈 Loaded {len(self.oi_history)} historical OI records")
+                else:
+                    print("📝 Detected old format, creating new history file")
+                    self.oi_history = pd.DataFrame(columns=required_columns)
+                    self.history_file.unlink()
             else:
-                self.oi_history = pd.DataFrame(columns=['timestamp', 'oi'])
+                self.oi_history = pd.DataFrame(columns=['timestamp', 'btc_oi', 'eth_oi', 'total_oi', 
+                                                      'btc_change_pct', 'eth_change_pct', 'total_change_pct'])
                 print("📝 Created new OI history file")
                 
             # Clean up old data (keep only last 24 hours)
@@ -81,15 +92,29 @@ class WhaleAgent(BaseAgent):
                 
         except Exception as e:
             print(f"❌ Error loading history: {str(e)}")
-            self.oi_history = pd.DataFrame(columns=['timestamp', 'oi'])
+            self.oi_history = pd.DataFrame(columns=['timestamp', 'btc_oi', 'eth_oi', 'total_oi'])
             
-    def _save_oi_data(self, timestamp, oi_value):
-        """Save new OI data point to CSV"""
+    def _save_oi_data(self, timestamp, btc_oi, eth_oi, total_oi):
+        """Save new OI data point with change percentages"""
         try:
+            # Calculate percentage changes if we have previous data
+            btc_change_pct = eth_change_pct = total_change_pct = 0.0
+            
+            if not self.oi_history.empty:
+                prev_data = self.oi_history.iloc[-1]
+                btc_change_pct = ((btc_oi - prev_data['btc_oi']) / prev_data['btc_oi']) * 100
+                eth_change_pct = ((eth_oi - prev_data['eth_oi']) / prev_data['eth_oi']) * 100
+                total_change_pct = ((total_oi - prev_data['total_oi']) / prev_data['total_oi']) * 100
+            
             # Add new data point
             new_row = pd.DataFrame([{
                 'timestamp': timestamp,
-                'oi': oi_value
+                'btc_oi': float(btc_oi),
+                'eth_oi': float(eth_oi),
+                'total_oi': float(total_oi),
+                'btc_change_pct': btc_change_pct,
+                'eth_change_pct': eth_change_pct,
+                'total_change_pct': total_change_pct
             }])
             
             self.oi_history = pd.concat([self.oi_history, new_row], ignore_index=True)
@@ -104,17 +129,44 @@ class WhaleAgent(BaseAgent):
         except Exception as e:
             print(f"❌ Error saving OI data: {str(e)}")
             
+    def _format_number_for_speech(self, number):
+        """Convert numbers to speech-friendly format"""
+        billions = number / 1e9
+        if billions >= 1:
+            return f"{billions:.4f} billion"
+        millions = number / 1e6
+        return f"{millions:.2f} million"
+
     def _get_current_oi(self):
         """Get current open interest data"""
         try:
-            oi_data = self.api.get_open_interest()
-            if oi_data is not None:
+            df = self.api.get_open_interest()
+            print(f"\n📊 Raw OI data shape: {df.shape if df is not None else 'No data received'}")
+            
+            if df is not None and not df.empty:
+                # Get the latest data point
+                latest_data = df.iloc[-1]  # Get most recent row
+                
+                # Extract values directly from our format
+                btc_oi = latest_data['btc_oi']
+                eth_oi = latest_data['eth_oi']
+                total_oi = latest_data['total_oi']
+                
+                print(f"\n📈 Market OI Breakdown:")
+                print(f"BTC: ${btc_oi:,.2f}")
+                print(f"ETH: ${eth_oi:,.2f}")
+                print(f"Total: ${total_oi:,.2f}")
+                
                 timestamp = datetime.now()
-                self._save_oi_data(timestamp, oi_data)
-                return oi_data
+                self._save_oi_data(timestamp, btc_oi, eth_oi, total_oi)
+                return total_oi
+                
+            print("❌ No data received from API")
             return None
+            
         except Exception as e:
             print(f"❌ Error getting OI data: {str(e)}")
+            print(f"Stack trace: {traceback.format_exc()}")
             return None
             
     def _get_historical_oi(self, minutes_ago):
@@ -126,7 +178,7 @@ class WhaleAgent(BaseAgent):
             historical_data = self.oi_history[self.oi_history['timestamp'] <= target_time]
             
             if not historical_data.empty:
-                return historical_data.iloc[-1]['oi']
+                return float(historical_data.iloc[-1]['total_oi'])
             return None
             
         except Exception as e:
@@ -134,26 +186,60 @@ class WhaleAgent(BaseAgent):
             return None
         
     def _calculate_changes(self, current_oi):
-        """Calculate OI changes across different timeframes"""
+        """Calculate OI changes for the configured interval"""
         changes = {}
         
-        for period_name, minutes in LOOKBACK_PERIODS.items():
-            historical_oi = self._get_historical_oi(minutes)
-            if historical_oi is not None:
-                pct_change = ((current_oi - historical_oi) / historical_oi) * 100
-                changes[period_name] = pct_change
-                
+        # Get current BTC value
+        current_btc = float(self.oi_history.iloc[-1]['btc_oi'])
+        
+        # Use our local CHECK_INTERVAL_MINUTES constant
+        interval = CHECK_INTERVAL_MINUTES
+        
+        # Get historical data from X minutes ago
+        historical_data = self.oi_history[
+            self.oi_history['timestamp'] <= (datetime.now() - timedelta(minutes=interval))
+        ]
+        
+        if not historical_data.empty:
+            historical_btc = float(historical_data.iloc[-1]['btc_oi'])
+            
+            # Calculate percentage change
+            btc_pct_change = ((current_btc - historical_btc) / historical_btc) * 100
+            
+            changes = {
+                'btc': btc_pct_change,
+                'interval': interval,
+                'start_btc': historical_btc,
+                'current_btc': current_btc
+            }
+            
         return changes
         
     def _format_announcement(self, changes):
-        """Format OI changes into a speech-friendly message"""
-        message = "Moon Dev Open Interest Update: "
-        
-        for period, change in changes.items():
-            direction = "increased" if change > 0 else "decreased"
-            message += f"In the last {period}, open interest has {direction} by {abs(change):.1f}%. "
+        """Format OI changes into a speech-friendly message with whale detection"""
+        if changes:
+            btc_change = changes['btc']
+            interval = changes['interval']
             
-        return message
+            # Format direction
+            btc_direction = "up" if btc_change > 0 else "down"
+            
+            # Check for whale activity
+            is_whale = self._detect_whale_activity(btc_change)
+            
+            # Build message
+            if is_whale:
+                message = "🐋 Whale Alert! "
+            else:
+                message = ""
+                
+            message += f"BTC OI {btc_direction} {abs(btc_change):.3f}% in {interval}m, "
+            message += f"from {self._format_number_for_speech(changes['start_btc'])} "
+            message += f"to {self._format_number_for_speech(changes['current_btc'])}"
+            
+            # Return both message and whale status
+            return message, is_whale
+        return None, False
         
     def run_monitoring_cycle(self):
         """Run one monitoring cycle"""
@@ -165,51 +251,34 @@ class WhaleAgent(BaseAgent):
                 print("❌ Failed to get current OI data")
                 return
                 
-            # Only announce changes if we have enough historical data
-            if len(self.oi_history) > 5:  # Need at least 5 minutes of data
+            # Calculate and announce changes if we have enough data
+            if len(self.oi_history) > 2:  # Need at least 2 data points
                 changes = self._calculate_changes(current_oi)
-                
                 if changes:
-                    announcement = self._format_announcement(changes)
-                    self._announce(announcement)
-                    
+                    announcement, is_whale = self._format_announcement(changes)
+                    if announcement:
+                        self._announce(announcement, is_whale)
             else:
                 print("📝 Building historical data...")
                 
         except Exception as e:
             print(f"❌ Error in monitoring cycle: {str(e)}")
+            print(f"Stack trace: {traceback.format_exc()}")
             
-    def run(self):
-        """Main loop for the Open Interest Monitor"""
-        print(f"\n🔄 Starting OI monitoring every {CHECK_INTERVAL_MINUTES} minutes...")
-        
-        while True:
-            try:
-                self.run_monitoring_cycle()
-                
-                # Sleep until next check
-                sleep_time = CHECK_INTERVAL_MINUTES * 60
-                next_check = datetime.now() + timedelta(minutes=CHECK_INTERVAL_MINUTES)
-                print(f"\n😴 Next check at {next_check.strftime('%H:%M:%S')}")
-                time.sleep(sleep_time)
-                
-            except KeyboardInterrupt:
-                print("\n👋 Gracefully shutting down Open Interest Monitor...")
-                break
-            except Exception as e:
-                print(f"❌ Error in main loop: {str(e)}")
-                time.sleep(60)  # Sleep for a minute on error
-
-    def _announce(self, message):
-        """Announce a message via OpenAI TTS and print"""
+    def _announce(self, message, is_whale=False):
+        """Announce a message, only use voice for whale alerts"""
         try:
             print(f"\n🗣️ {message}")
             
+            # Only use voice for whale alerts
+            if not is_whale:
+                return
+                
             # Generate unique filename based on timestamp
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            speech_file = self.audio_dir / f"oi_update_{timestamp}.mp3"
+            speech_file = self.audio_dir / f"temp_audio_{timestamp}.mp3"
             
-            # Generate speech using OpenAI
+            # Generate speech using OpenAI with proper streaming
             response = openai.audio.speech.create(
                 model=VOICE_MODEL,
                 voice=VOICE_NAME,
@@ -217,18 +286,112 @@ class WhaleAgent(BaseAgent):
                 input=message
             )
             
-            # Save and play the audio
-            response.stream_to_file(speech_file)
+            # Save and play the audio using the new streaming method
+            with open(speech_file, 'wb') as f:
+                for chunk in response.iter_bytes():
+                    f.write(chunk)
             
             # Play the audio (platform specific)
             if os.name == 'posix':  # macOS/Linux
                 os.system(f"afplay {speech_file}")
             else:  # Windows
                 os.system(f"start {speech_file}")
+                time.sleep(5)  # Give it time to start playing
+            
+            # Delete the file after playing
+            try:
+                speech_file.unlink()  # Delete the temporary audio file
+                print("🧹 Cleaned up temporary audio file")
+            except Exception as e:
+                print(f"⚠️ Couldn't delete audio file: {e}")
                 
         except Exception as e:
             print(f"❌ Error in text-to-speech: {str(e)}")
 
+    def _announce_initial_summary(self):
+        """Announce the current state of the market based on existing data"""
+        try:
+            if self.oi_history.empty:
+                current_data = self._get_current_oi()
+                if current_data is not None:
+                    latest_data = self.oi_history.iloc[-1]
+                    btc_oi = latest_data['btc_oi']
+                    eth_oi = latest_data['eth_oi']
+                    total_oi = latest_data['total_oi']
+                    
+                    message = "🌙 Moon Dev's Whale Watcher starting fresh! I'll compare changes once I have more data. "
+                    message += f"Current total open interest is {self._format_number_for_speech(total_oi)} with Bitcoin at "
+                    message += f"{(btc_oi/total_oi)*100:.1f}% and Ethereum at {(eth_oi/total_oi)*100:.1f}% of the market."
+                    self._announce(message)
+                return
+                
+            # Rest of the method remains unchanged
+            current_oi = float(self.oi_history.iloc[-1]['total_oi'])
+            changes = {}
+            available_periods = []
+            
+            # Check what historical data we have
+            for period_name, minutes in LOOKBACK_PERIODS.items():
+                historical_oi = self._get_historical_oi(minutes)
+                if historical_oi is not None:
+                    pct_change = ((current_oi - historical_oi) / historical_oi) * 100
+                    changes[period_name] = pct_change
+                    available_periods.append(period_name)
+            
+            if not changes:
+                earliest_data = self.oi_history.iloc[0]
+                latest_data = self.oi_history.iloc[-1]
+                minutes_diff = (latest_data['timestamp'] - earliest_data['timestamp']).total_seconds() / 60
+                pct_change = ((latest_data['total_oi'] - earliest_data['total_oi']) / earliest_data['total_oi']) * 100
+                
+                message = f"Open Interest has {('increased' if pct_change > 0 else 'decreased')} "
+                message += f"by {abs(pct_change):.1f}% over the last {int(minutes_diff)} minutes."
+            else:
+                message = "Initial market summary: "
+                for period in available_periods:
+                    change = changes[period]
+                    direction = "up" if change > 0 else "down"
+                    message += f"OI is {direction} {abs(change):.1f}% over the last {period}. "
+            
+            self._announce(message)
+            
+        except Exception as e:
+            print(f"❌ Error in initial summary: {str(e)}")
+            print(f"Stack trace: {traceback.format_exc()}")
+
+    def _detect_whale_activity(self, current_change):
+        """Detect if current change is significantly above rolling average"""
+        try:
+            if len(self.oi_history) < 10:  # Need some history for meaningful average
+                return False
+            
+            # Get rolling average of absolute changes
+            historical_changes = self.oi_history['btc_change_pct'].abs().rolling(window=10).mean().dropna()
+            if historical_changes.empty:
+                return False
+                
+            avg_change = historical_changes.mean()
+            
+            # If current change is 25% larger than rolling average, consider it whale activity
+            return abs(current_change) > (avg_change * 1.25)
+            
+        except Exception as e:
+            print(f"❌ Error detecting whale activity: {str(e)}")
+            return False
+
 if __name__ == "__main__":
     agent = WhaleAgent()
-    agent.run() 
+    
+    # Run the agent continuously
+    print("\n🐋 Moon Dev's Whale Agent starting monitoring cycle...")
+    while True:
+        try:
+            agent.run_monitoring_cycle()
+            time.sleep(60 * CHECK_INTERVAL_MINUTES)  # Sleep for the configured interval
+        except KeyboardInterrupt:
+            print("\n👋 Whale Agent shutting down gracefully...")
+            break
+        except Exception as e:
+            print(f"❌ Error in main loop: {str(e)}")
+            print("🔧 Moon Dev suggests checking the logs and trying again!")
+            time.sleep(60)  # Sleep for 1 minute on error 

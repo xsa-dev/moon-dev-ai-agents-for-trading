@@ -49,13 +49,16 @@ from src.data.ohlcv_collector import collect_all_tokens
 from datetime import datetime, timedelta
 import time
 from src.config import *
+from src.agents.base_agent import BaseAgent
 
 # Load environment variables
 load_dotenv()
 
-class RiskAgent:
+class RiskAgent(BaseAgent):
     def __init__(self):
         """Initialize Moon Dev's Risk Agent 🛡️"""
+        super().__init__('risk')  # Initialize base agent with type
+        
         api_key = os.getenv("ANTHROPIC_KEY")
         if not api_key:
             raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
@@ -333,6 +336,7 @@ class RiskAgent:
                     self.handle_limit_breach("PNL_USD", current_pnl)
                     return True
                     
+            print("✅ All risk limits OK")
             return False
             
         except Exception as e:
@@ -433,6 +437,42 @@ Then explain your reasoning.
         except Exception as e:
             print(f"❌ Error calculating PnL: {str(e)}")
             return 0.0
+
+    def run(self):
+        """Run the risk agent (implements BaseAgent interface)"""
+        try:
+            # Get current PnL
+            current_pnl = self.get_current_pnl()
+            current_balance = self.get_portfolio_value()
+            
+            print(f"\n💰 Current PnL: ${current_pnl:.2f}")
+            print(f"💼 Current Balance: ${current_balance:.2f}")
+            print(f"📉 Minimum Balance Limit: ${MINIMUM_BALANCE_USD:.2f}")
+            
+            # Check minimum balance limit
+            if current_balance < MINIMUM_BALANCE_USD:
+                print(f"⚠️ ALERT: Current balance ${current_balance:.2f} is below minimum ${MINIMUM_BALANCE_USD:.2f}")
+                self.handle_limit_breach("MINIMUM_BALANCE", current_balance)
+                return True
+            
+            # Check PnL limits
+            if USE_PERCENTAGE:
+                if abs(current_pnl) >= MAX_LOSS_PERCENT:
+                    print(f"⚠️ PnL limit reached: {current_pnl}%")
+                    self.handle_limit_breach("PNL_PERCENT", current_pnl)
+                    return True
+            else:
+                if abs(current_pnl) >= MAX_LOSS_USD:
+                    print(f"⚠️ PnL limit reached: ${current_pnl:.2f}")
+                    self.handle_limit_breach("PNL_USD", current_pnl)
+                    return True
+                    
+            print("✅ All risk limits OK")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error checking risk limits: {str(e)}")
+            return False
 
 def main():
     """Main function to run the risk agent"""

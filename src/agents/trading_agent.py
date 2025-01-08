@@ -375,6 +375,10 @@ Example format:
             print(f"❌ Unexpected error parsing allocations: {e}")
             return None
 
+    def run(self):
+        """Run the trading agent (implements BaseAgent interface)"""
+        self.run_trading_cycle()
+
     def run_trading_cycle(self, strategy_signals=None):
         """Run one complete trading cycle"""
         try:

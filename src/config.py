@@ -86,17 +86,8 @@ AI_TEMPERATURE = 0.7  # Creativity vs precision (0-1)
 ENABLE_STRATEGIES = True  # Set this to True to use strategies
 STRATEGY_MIN_CONFIDENCE = 0.7  # Minimum confidence to act on strategy signals
 
-# Agent Run Intervals (in minutes)
-AGENT_INTERVALS = {
-    'risk': 15,        # Risk checks every 15 minutes
-    'trading': 15,     # Trading analysis every 15 minutes
-    'strategy': 15,    # Strategy execution every 15 minutes
-    'copybot': 15,     # Copybot analysis every 15 minutes
-    'whale': 5,        # Dave the Whale Agent every 5 minutes 🐋
-}
-
 # Sleep time between main agent runs
-SLEEP_BETWEEN_RUNS_MINUTES = 15  # Default sleep time for main.py
+SLEEP_BETWEEN_RUNS_MINUTES = 15  # How long to sleep between agent runs 🕒
 
 # Future variables (not active yet) 🔮
 sell_at_multiple = 3

@@ -126,6 +126,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 - [x] 1/8 - Added minimum balance protection to Risk Agent with configurable AI consultation
             - Completed CopyBot portfolio analyzer with position sizing
+            - V0 of the whale agent launched
 - [x] 1/7 - CopyBot Agent: Added AI agent to analyze copybot portfolio and decide on whether it should take a position on their account 
 - [x] 1/6 - Market Data API: Added comprehensive API for liquidations, funding rates, open interest, and copybot data
 - [x] 1/5 - created a documentation training video with a full walkthrough of this github (releasing jan 7th)
@@ -188,3 +189,11 @@ The Moon Dev Market Data API provides real-time access to:
 - 📝 Recent Market Transactions
 
 Check out [API Documentation](docs/api.md) for detailed usage instructions.
+
+## Agents
+
+### Whale Agent 🐋
+- Monitors BTC open interest changes in real-time
+- Announces changes via OpenAI TTS voice
+- Detects whale activity when movements are 25% above average
+- Runs independently: `python src/agents/whale_agent.py`
