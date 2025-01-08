@@ -99,54 +99,46 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - Risk Agent (`risk_agent.py`): Monitors and manages portfolio risk, enforcing position limits and PnL thresholds
 
 ## 🚀 Project Progress & Roadmap
-### Phase 1: Foundation ✅
-- [x] Project structure setup
-- [x] Environment variable configuration
-- [x] API key management
-- [x] Basic OHLCV data collection
-- [x] Multi-token monitoring setup
-- [x] Temporary data storage system
-- [x] Token display improvements
-- [x] Market Data API Integration (OI, Liquidations, Funding)
+### Phase 1: Foundation & Basic Trading ✅
+- [x] Basic project structure
+- [x] Environment setup
+- [x] Token data collection
+- [x] Basic trading functions
+- [x] Market data API integration (OI, Liquidations, Funding)
+- [x] Risk management agent with PnL limits
+- [x] Risk agent minimum balance protection (1/8/25)
+- [x] CopyBot portfolio analyzer (1/8/25)
 
-### Phase 2: Core Trading Infrastructure 🚧
-- [x] ezbot.py that allows hand traders bot functions
-- [x] Market buy/sell functionality
-- [x] Position management
-- [x] Slippage control
-- [x] Transaction retry logic
-- [x] Risk management system
-- [ ] Portfolio-wide analysis
+### Phase 2: Advanced Features 🚀
+- [ ] Portfolio optimization
+- [ ] Advanced risk management
+- [ ] Machine learning integration
+- [ ] Backtesting framework
+- [ ] Performance analytics
+
+### Phase 3: Optimization & Scaling 🔄
+- [ ] Multi-exchange support
 - [ ] Advanced order types
-
-### Phase 3: Launch A Bunch of Agents to Learn 🤖
-- [x] Basic AI model setup
-- [x] Trading Agent Example
-- [x] Risk assessment agent
-- [ ] Entry/exit strategy agent - build a buying agent to optimize slippage etc and easy to implement into any agents
-- [ ] Sentiment analysis agent - use twikit package
-- [ ] Multi-agent coordination 
-- [ ] Portfolio optimization agent 
-
-### Phase 4: Advanced Features 🔮
-- [ ] Social sentiment integration
-- [ ] Hyperliquid Perp Trading
-- [ ] Hyperliquid Spot Trading 
-
-### Phase 5: Optimization & Scaling 🚀
 - [ ] Performance optimization
-- [ ] Multi-chain support
-- [ ] Emergency protocols
+- [ ] Distributed architecture
 
 ### Shipped Features 📦
 
-- [x] 1/7 - CopyBot Agent: Added AI agent to analyze copybot portfolio and decide on wether it should take a position on their account 
+- [x] 1/8 - Added minimum balance protection to Risk Agent with configurable AI consultation
+            - Completed CopyBot portfolio analyzer with position sizing
+- [x] 1/7 - CopyBot Agent: Added AI agent to analyze copybot portfolio and decide on whether it should take a position on their account 
 - [x] 1/6 - Market Data API: Added comprehensive API for liquidations, funding rates, open interest, and copybot data
 - [x] 1/5 - created a documentation training video with a full walkthrough of this github (releasing jan 7th)
 - [x] 1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
 - [x] 1/3 - risk_agent.py: built out an ai agent to manage risk
 - [x] 1/2 - trading_agent.py: built the first trading agent 
 - [x] 1/1 - first lines of code written
+
+### Recent Updates 📅
+- [1/8/25] Added minimum balance protection to Risk Agent with configurable AI consultation
+- [1/8/25] Completed CopyBot portfolio analyzer with position sizing
+- [1/2/25] Added Market Data API Integration
+- [1/1/25] Initial system architecture and trading functions
 
 ## 🚀 Quick Start Guide
 
