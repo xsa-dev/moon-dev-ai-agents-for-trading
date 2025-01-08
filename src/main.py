@@ -26,7 +26,7 @@ load_dotenv()
 
 # Agent Configuration
 ACTIVE_AGENTS = {
-    'risk': True,      # Risk management agent
+    'risk': False,      # Risk management agent
     'trading': False,   # LLM trading agent
     'strategy': False,  # Strategy-based trading agent
     'copybot': True,    # CopyBot agent
