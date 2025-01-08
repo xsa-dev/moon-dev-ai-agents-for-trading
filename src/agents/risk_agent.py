@@ -63,8 +63,12 @@ class RiskAgent:
         self.client = anthropic.Anthropic(api_key=api_key)
         self.override_active = False
         self.last_override_check = None
-        self.start_balance = 0.0
-        self.current_value = 0.0
+        
+        # Initialize start balance using portfolio value
+        self.start_balance = self.get_portfolio_value()
+        print(f"🏦 Initial Portfolio Balance: ${self.start_balance:.2f}")
+        
+        self.current_value = self.start_balance
         cprint("🛡️ Risk Agent initialized!", "white", "on_blue")
         
     def get_portfolio_value(self):
@@ -300,9 +304,139 @@ class RiskAgent:
         except Exception as e:
             cprint(f"❌ Error in close_all_positions: {str(e)}", "white", "on_red")
 
+    def check_risk_limits(self):
+        """Check if any risk limits have been breached"""
+        try:
+            # Get current PnL
+            current_pnl = self.get_current_pnl()
+            current_balance = self.get_portfolio_value()
+            
+            print(f"\n💰 Current PnL: ${current_pnl:.2f}")
+            print(f"💼 Current Balance: ${current_balance:.2f}")
+            print(f"📉 Minimum Balance Limit: ${MINIMUM_BALANCE_USD:.2f}")
+            
+            # Check minimum balance limit
+            if current_balance < MINIMUM_BALANCE_USD:
+                print(f"⚠️ ALERT: Current balance ${current_balance:.2f} is below minimum ${MINIMUM_BALANCE_USD:.2f}")
+                self.handle_limit_breach("MINIMUM_BALANCE", current_balance)
+                return True
+            
+            # Check PnL limits
+            if USE_PERCENTAGE:
+                if abs(current_pnl) >= MAX_LOSS_PERCENT:
+                    print(f"⚠️ PnL limit reached: {current_pnl}%")
+                    self.handle_limit_breach("PNL_PERCENT", current_pnl)
+                    return True
+            else:
+                if abs(current_pnl) >= MAX_LOSS_USD:
+                    print(f"⚠️ PnL limit reached: ${current_pnl:.2f}")
+                    self.handle_limit_breach("PNL_USD", current_pnl)
+                    return True
+                    
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error checking risk limits: {str(e)}")
+            return False
+            
+    def handle_limit_breach(self, breach_type, current_value):
+        """Handle breached risk limits with AI consultation if enabled"""
+        try:
+            # If AI confirmation is disabled, close positions immediately
+            if not USE_AI_CONFIRMATION:
+                print(f"\n🚨 {breach_type} limit breached! Closing all positions immediately...")
+                print(f"💡 (AI confirmation disabled in config)")
+                self.close_all_positions()
+                return
+                
+            # Get all current positions using fetch_wallet_holdings_og
+            positions_df = n.fetch_wallet_holdings_og(address)
+            
+            # Prepare breach context
+            if breach_type == "MINIMUM_BALANCE":
+                context = f"Current balance (${current_value:.2f}) has fallen below minimum balance limit (${MINIMUM_BALANCE_USD:.2f})"
+            elif breach_type == "PNL_USD":
+                context = f"Current PnL (${current_value:.2f}) has exceeded USD limit (${MAX_LOSS_USD:.2f})"
+            else:
+                context = f"Current PnL ({current_value}%) has exceeded percentage limit ({MAX_LOSS_PERCENT}%)"
+            
+            # Format positions for AI
+            positions_str = "\nCurrent Positions:\n"
+            for _, row in positions_df.iterrows():
+                if row['USD Value'] > 0:
+                    positions_str += f"- {row['Mint Address']}: {row['Amount']} (${row['USD Value']:.2f})\n"
+                    
+            # Get AI recommendation
+            prompt = f"""
+🚨 RISK LIMIT BREACH ALERT 🚨
+
+{context}
+
+{positions_str}
+
+Should we close all positions immediately? Consider:
+1. Market conditions
+2. Position sizes
+3. Recent price action
+4. Risk of further losses
+
+Respond with:
+CLOSE_ALL or HOLD_POSITIONS
+Then explain your reasoning.
+"""
+            # Get AI decision
+            message = self.client.messages.create(
+                model=AI_MODEL,
+                max_tokens=AI_MAX_TOKENS,
+                temperature=AI_TEMPERATURE,
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }]
+            )
+            
+            response = message.content
+            if isinstance(response, list):
+                response = '\n'.join([item.text if hasattr(item, 'text') else str(item) for item in response])
+            
+            print("\n🤖 AI Risk Assessment:")
+            print("=" * 50)
+            print(response)
+            print("=" * 50)
+            
+            # Parse decision
+            decision = response.split('\n')[0].strip()
+            
+            if decision == "CLOSE_ALL":
+                print("🚨 AI recommends closing all positions!")
+                self.close_all_positions()
+            else:
+                print("✋ AI recommends holding positions despite breach")
+                
+        except Exception as e:
+            print(f"❌ Error handling limit breach: {str(e)}")
+            # Default to closing positions on error
+            print("⚠️ Error in AI consultation - defaulting to close all positions")
+            self.close_all_positions()
+
+    def get_current_pnl(self):
+        """Calculate current PnL based on start balance"""
+        try:
+            current_value = self.get_portfolio_value()
+            print(f"\n💰 Start Balance: ${self.start_balance:.2f}")
+            print(f"📊 Current Value: ${current_value:.2f}")
+            
+            pnl = current_value - self.start_balance
+            print(f"📈 Current PnL: ${pnl:.2f}")
+            return pnl
+            
+        except Exception as e:
+            print(f"❌ Error calculating PnL: {str(e)}")
+            return 0.0
+
 def main():
     """Main function to run the risk agent"""
-    cprint("🛡️ Risk Agent Starting...", "white", "on_blue")
+    cprint("🛡🛡🛡️ Risk Agent Starting...", "white", "on_blue")
     
     agent = RiskAgent()
     

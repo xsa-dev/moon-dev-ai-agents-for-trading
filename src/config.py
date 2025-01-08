@@ -55,6 +55,10 @@ USE_PERCENTAGE = False  # If True, use percentage-based limits. If False, use US
 MAX_LOSS_USD = 25  # Maximum loss in USD before stopping trading
 MAX_GAIN_USD = 25 # Maximum gain in USD before stopping trading
 
+# USD MINIMUM BALANCE RISK CONTROL
+MINIMUM_BALANCE_USD = 50  # If balance falls below this, risk agent will consider closing all positions
+USE_AI_CONFIRMATION = True  # If True, consult AI before closing positions. If False, close immediately on breach
+
 # Percentage-based limits (used if USE_PERCENTAGE is True)
 MAX_LOSS_PERCENT = 5  # Maximum loss as percentage (e.g., 20 = 20% loss)
 MAX_GAIN_PERCENT = 5  # Maximum gain as percentage (e.g., 50 = 50% gain)

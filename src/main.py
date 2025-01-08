@@ -26,10 +26,10 @@ load_dotenv()
 
 # Agent Configuration
 ACTIVE_AGENTS = {
-    'risk': False,      # Risk management agent
+    'risk': True,      # Risk management agent
     'trading': False,   # LLM trading agent
     'strategy': False,  # Strategy-based trading agent
-    'copybot': True,    # CopyBot agent
+    'copybot': False,    # CopyBot agent
     # Add more agents here as we build them:
     # 'sentiment': False,  # Future sentiment analysis agent
     # 'portfolio': False,  # Future portfolio optimization agent
@@ -45,6 +45,22 @@ def run_agents():
         copybot_agent = CopyBotAgent() if ACTIVE_AGENTS['copybot'] else None
 
         while True:
+            # Run Risk Management Checks
+            if risk_agent:
+                cprint("\n🛡️ Running Risk Management Checks...", "cyan")
+                print("\n💰 Checking current portfolio value...")
+                portfolio_value = risk_agent.get_portfolio_value()
+                print(f"📊 Current Portfolio Value: ${portfolio_value:.2f}")
+                print(f"📉 Minimum Balance Limit: ${MINIMUM_BALANCE_USD:.2f}")
+                
+                # Check risk limits
+                print("\n🔍 Checking risk limits...")
+                risk_agent.check_risk_limits()
+                
+                # Log daily balance
+                print("\n📝 Checking if we need to log daily balance...")
+                risk_agent.log_daily_balance()
+
             # Run CopyBot Analysis
             if copybot_agent:
                 cprint("\n🤖 Running CopyBot Portfolio Analysis...", "cyan")
