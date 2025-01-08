@@ -97,6 +97,8 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - Trading Agent (`trading_agent.py`): Example agent that analyzes token data via LLM to make basic trade decisions
 - Strategy Agent (`strategy_agent.py`): Manages and executes trading strategies placed in the strategies folder
 - Risk Agent (`risk_agent.py`): Monitors and manages portfolio risk, enforcing position limits and PnL thresholds
+- Copy Agent (`copy_agent.py`): monitors copy bot for potential trades
+- Whale Agent (`whale_agent.py`): monitors whale activity and announces when a whale enters the market
 
 ## 🚀 Project Progress & Roadmap
 ### Phase 1: Foundation & Basic Trading ✅
