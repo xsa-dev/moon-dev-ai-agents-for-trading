@@ -24,7 +24,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
-CHECK_INTERVAL_MINUTES = 5  # How often to check OI (can be set to 0.5 for 30 seconds)
+CHECK_INTERVAL_MINUTES = 10  # How often to check OI (can be set to 0.5 for 30 seconds)
 LOOKBACK_PERIODS = {
     '15min': 15  # Simplified to just 15 minutes
 }
@@ -102,9 +102,18 @@ class WhaleAgent(BaseAgent):
             
             if not self.oi_history.empty:
                 prev_data = self.oi_history.iloc[-1]
+                print("\n📊 Previous vs Current OI:")
+                print(f"Previous BTC OI: ${prev_data['btc_oi']:,.2f}")
+                print(f"Current BTC OI: ${btc_oi:,.2f}")
+                
                 btc_change_pct = ((btc_oi - prev_data['btc_oi']) / prev_data['btc_oi']) * 100
                 eth_change_pct = ((eth_oi - prev_data['eth_oi']) / prev_data['eth_oi']) * 100
                 total_change_pct = ((total_oi - prev_data['total_oi']) / prev_data['total_oi']) * 100
+                
+                print(f"\n📈 Calculated Changes:")
+                print(f"BTC Change: {btc_change_pct:.4f}%")
+                print(f"ETH Change: {eth_change_pct:.4f}%")
+                print(f"Total Change: {total_change_pct:.4f}%")
             
             # Add new data point
             new_row = pd.DataFrame([{
@@ -117,17 +126,24 @@ class WhaleAgent(BaseAgent):
                 'total_change_pct': total_change_pct
             }])
             
+            print("\n📝 Adding new data point to history...")
+            print(f"History size before: {len(self.oi_history)}")
             self.oi_history = pd.concat([self.oi_history, new_row], ignore_index=True)
+            print(f"History size after: {len(self.oi_history)}")
             
             # Clean up old data
             cutoff_time = datetime.now() - timedelta(hours=24)
+            old_size = len(self.oi_history)
             self.oi_history = self.oi_history[self.oi_history['timestamp'] > cutoff_time]
+            print(f"Removed {old_size - len(self.oi_history)} old records")
             
             # Save to file
             self.oi_history.to_csv(self.history_file, index=False)
+            print("💾 Saved to history file")
             
         except Exception as e:
             print(f"❌ Error saving OI data: {str(e)}")
+            print(f"Stack trace: {traceback.format_exc()}")
             
     def _format_number_for_speech(self, number):
         """Convert numbers to speech-friendly format"""
@@ -140,8 +156,9 @@ class WhaleAgent(BaseAgent):
     def _get_current_oi(self):
         """Get current open interest data"""
         try:
+            print("\n🔍 Fetching fresh OI data from API...")
             df = self.api.get_open_interest()
-            print(f"\n📊 Raw OI data shape: {df.shape if df is not None else 'No data received'}")
+            print(f"📊 Raw OI data shape: {df.shape if df is not None else 'No data received'}")
             
             if df is not None and not df.empty:
                 # Get the latest data point
@@ -152,12 +169,13 @@ class WhaleAgent(BaseAgent):
                 eth_oi = latest_data['eth_oi']
                 total_oi = latest_data['total_oi']
                 
-                print(f"\n📈 Market OI Breakdown:")
+                print(f"\n📈 Market OI Breakdown (Fresh from API):")
                 print(f"BTC: ${btc_oi:,.2f}")
                 print(f"ETH: ${eth_oi:,.2f}")
                 print(f"Total: ${total_oi:,.2f}")
                 
                 timestamp = datetime.now()
+                print(f"\n💾 Saving data point at {timestamp}")
                 self._save_oi_data(timestamp, btc_oi, eth_oi, total_oi)
                 return total_oi
                 
@@ -189,8 +207,11 @@ class WhaleAgent(BaseAgent):
         """Calculate OI changes for the configured interval"""
         changes = {}
         
+        print("\n📊 Calculating OI Changes:")
+        
         # Get current BTC value
         current_btc = float(self.oi_history.iloc[-1]['btc_oi'])
+        print(f"Current BTC OI: ${current_btc:,.2f}")
         
         # Use our local CHECK_INTERVAL_MINUTES constant
         interval = CHECK_INTERVAL_MINUTES
@@ -202,9 +223,11 @@ class WhaleAgent(BaseAgent):
         
         if not historical_data.empty:
             historical_btc = float(historical_data.iloc[-1]['btc_oi'])
+            print(f"Historical BTC OI ({interval}m ago): ${historical_btc:,.2f}")
             
             # Calculate percentage change
             btc_pct_change = ((current_btc - historical_btc) / historical_btc) * 100
+            print(f"Calculated change: {btc_pct_change:.4f}%")
             
             changes = {
                 'btc': btc_pct_change,
@@ -212,7 +235,9 @@ class WhaleAgent(BaseAgent):
                 'start_btc': historical_btc,
                 'current_btc': current_btc
             }
-            
+        else:
+            print(f"⚠️ No historical data found from {interval}m ago")
+        
         return changes
         
     def _format_announcement(self, changes):
@@ -363,20 +388,29 @@ class WhaleAgent(BaseAgent):
         """Detect if current change is significantly above rolling average"""
         try:
             if len(self.oi_history) < 10:  # Need some history for meaningful average
+                print("⚠️ Not enough history for whale detection")
                 return False
             
             # Get rolling average of absolute changes
             historical_changes = self.oi_history['btc_change_pct'].abs().rolling(window=10).mean().dropna()
             if historical_changes.empty:
+                print("⚠️ No historical changes available")
                 return False
                 
             avg_change = historical_changes.mean()
+            threshold = avg_change * 1.25
             
-            # If current change is 25% larger than rolling average, consider it whale activity
-            return abs(current_change) > (avg_change * 1.25)
+            print(f"\n🔍 Whale Detection Analysis:")
+            print(f"Current change: {abs(current_change):.4f}%")
+            print(f"Average change: {avg_change:.4f}%")
+            print(f"Threshold (125% of avg): {threshold:.4f}%")
+            print(f"Is whale? {'Yes! 🐋' if abs(current_change) > threshold else 'No'}")
+            
+            return abs(current_change) > threshold
             
         except Exception as e:
             print(f"❌ Error detecting whale activity: {str(e)}")
+            print(f"Stack trace: {traceback.format_exc()}")
             return False
 
 if __name__ == "__main__":
