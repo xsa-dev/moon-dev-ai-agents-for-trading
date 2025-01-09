@@ -132,7 +132,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
             - Monitors Twitter sentiment for major tokens
             - Tracks sentiment changes over time
             - Announces significant sentiment shifts
-         - updated the whale agent as well
+         - updated the whale agent as well to work better
 - [x] 1/8 - Added minimum balance protection to Risk Agent with configurable AI consultation
             - Completed CopyBot portfolio analyzer with position sizing
             - V0 of the whale agent launched
