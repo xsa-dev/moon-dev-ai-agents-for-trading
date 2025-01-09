@@ -99,6 +99,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - Risk Agent (`risk_agent.py`): Monitors and manages portfolio risk, enforcing position limits and PnL thresholds
 - Copy Agent (`copy_agent.py`): monitors copy bot for potential trades
 - Whale Agent (`whale_agent.py`): monitors whale activity and announces when a whale enters the market
+- Sentiment Agent (`sentiment_agent.py`): analyzes Twitter sentiment for crypto tokens with voice announcements
 
 ## 🚀 Project Progress & Roadmap
 ### Phase 1: Foundation & Basic Trading ✅
@@ -115,6 +116,7 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - [ ] Portfolio optimization
 - [ ] Advanced risk management
 - [ ] Machine learning integration
+- [x] Sentiment analysis with voice announcements
 - [ ] Backtesting framework
 - [ ] Performance analytics
 
@@ -126,6 +128,11 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 
 ### Shipped Features 📦
 
+- [x] 1/9 - Added Sentiment Analysis Agent with voice announcements and historical tracking
+            - Monitors Twitter sentiment for major tokens
+            - Tracks sentiment changes over time
+            - Announces significant sentiment shifts
+         - updated the whale agent as well
 - [x] 1/8 - Added minimum balance protection to Risk Agent with configurable AI consultation
             - Completed CopyBot portfolio analyzer with position sizing
             - V0 of the whale agent launched

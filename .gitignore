@@ -74,3 +74,4 @@ src/strategies/custom/dev_*.py
 moon-dev-ai-agents-for-trading/src/dev
 src/dev
 src/agents/api_data
+cookies.json
