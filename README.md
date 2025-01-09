@@ -7,6 +7,7 @@
 This project explores the potential of [artificial financial intelligence](https://www.afi.xyz) - a focused implementation of AI for trading and investing research.
 
 ⭐️ [first full concise documentation video (watch here)](https://www.youtube.com/watch?v=So_LQVKa55c)
+
 📀 follow all updates here on youtube: https://www.youtube.com/playlist?list=PLXrNVMjRZUJg4M4uz52iGd1LhXXGVbIFz
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
@@ -34,26 +35,6 @@ While we use the RBI framework for strategy research, we're exploring AI agents 
 all the video updates are consolidated in the below playlist on youtube
 📀 https://www.youtube.com/playlist?list=PLXrNVMjRZUJg4M4uz52iGd1LhXXGVbIFz
 
-## 🗺️ Research Roadmap
-
-### 1. Risk Control Agents
-Exploring AI agents that could assist with risk management. This is purely experimental research into risk oversight possibilities.
-
-### 2. Exit Agents
-Researching potential exit timing assistance. This overlaps with risk management research but focuses on position management concepts.
-
-### 3. Entry Agents
-Investigating entry-focused concepts after risk management research.
-
-### 4. Sentiment Collection Agents
-Exploring ways to gather market sentiment from Twitter, Discord, and Telegram for research purposes.
-
-### 5. Strategy Execution Agents
-Researching concepts like:
-- Multi-agent consensus
-- Strategy validation
-- Dynamic trade filtering
-
 ## ⚠️ Critical Disclaimers
 
 *There is no token associated with this project and there never will be. any token launched is not affiliated with this project, moon dev will never dm you. be careful. don't send funds anywhere*
@@ -78,14 +59,6 @@ Researching concepts like:
 ## 👂 Looking for Updates?
 Project updates will be posted in discord, join here: [moondev.com](http://moondev.com) 
 
-## 📜 Detailed Disclaimer
-The content presented is for educational and informational purposes only and does not constitute financial advice. All trading involves risk and may not be suitable for all investors. You should carefully consider your investment objectives, level of experience, and risk appetite before investing.
-
-Past performance is not indicative of future results. There is no guarantee that any trading strategy or algorithm discussed will result in profits or will not incur losses.
-
-**CFTC Disclaimer:** Commodity Futures Trading Commission (CFTC) regulations require disclosure of the risks associated with trading commodities and derivatives. There is a substantial risk of loss in trading and investing.
-
-I am not a licensed financial advisor or a registered broker-dealer. Content & code is based on personal research perspectives and should not be relied upon as a guarantee of success in trading.
 
 ## 🔗 Links
 - Free Algo Trading Roadmap: [moondev.com](https://moondev.com)
@@ -120,12 +93,6 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - [ ] Backtesting framework
 - [ ] Performance analytics
 
-### Phase 3: Optimization & Scaling 🔄
-- [ ] Multi-exchange support
-- [ ] Advanced order types
-- [ ] Performance optimization
-- [ ] Distributed architecture
-
 ### Shipped Features 📦
 
 - [x] 1/9 - Added Sentiment Analysis Agent with voice announcements and historical tracking
@@ -143,12 +110,6 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 - [x] 1/3 - risk_agent.py: built out an ai agent to manage risk
 - [x] 1/2 - trading_agent.py: built the first trading agent 
 - [x] 1/1 - first lines of code written
-
-### Recent Updates 📅
-- [1/8/25] Added minimum balance protection to Risk Agent with configurable AI consultation
-- [1/8/25] Completed CopyBot portfolio analyzer with position sizing
-- [1/2/25] Added Market Data API Integration
-- [1/1/25] Initial system architecture and trading functions
 
 ## 🚀 Quick Start Guide
 
@@ -188,21 +149,12 @@ I am not a licensed financial advisor or a registered broker-dealer. Content & c
 ---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
 
-## 🔌 API Features
-The Moon Dev Market Data API provides real-time access to:
-- 📊 Liquidation Data
-- 💰 Funding Rates
-- 📈 Open Interest (Symbol & Total Market)
-- 🆕 New Token Launches
-- 🤖 CopyBot Data & Follow Lists
-- 📝 Recent Market Transactions
 
-Check out [API Documentation](docs/api.md) for detailed usage instructions.
+## 📜 Detailed Disclaimer
+The content presented is for educational and informational purposes only and does not constitute financial advice. All trading involves risk and may not be suitable for all investors. You should carefully consider your investment objectives, level of experience, and risk appetite before investing.
 
-## Agents
+Past performance is not indicative of future results. There is no guarantee that any trading strategy or algorithm discussed will result in profits or will not incur losses.
 
-### Whale Agent 🐋
-- Monitors BTC open interest changes in real-time
-- Announces changes via OpenAI TTS voice
-- Detects whale activity when movements are 25% above average
-- Runs independently: `python src/agents/whale_agent.py`
+**CFTC Disclaimer:** Commodity Futures Trading Commission (CFTC) regulations require disclosure of the risks associated with trading commodities and derivatives. There is a substantial risk of loss in trading and investing.
+
+I am not a licensed financial advisor or a registered broker-dealer. Content & code is based on personal research perspectives and should not be relied upon as a guarantee of success in trading.
