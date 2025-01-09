@@ -2,6 +2,8 @@
 🌙 Moon Dev's CopyBot Agent
 Analyzes current copybot positions to identify opportunities for increased position sizes
 
+video for copy bot: https://youtu.be/tQPRW19Qcak?si=b6rAGpz4CuXKXyzn
+
 think about list
 - not all these tokens will have OHLCV data so we need to address that some how
 - good to pass in BTC/ETH data too in order to see market structure
