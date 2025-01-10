@@ -96,6 +96,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 1/10 - built a coin gecko agent conversation between 2 ai agents and all of coin geckos data
 - [x] 1/10 - added a focus agent that will take random samples of my voice to ensure im always locked in. my kpi is 200 ai uses per day which is hard when i yap so this is the solution.
 - [x] 1/9 - Added Sentiment Analysis Agent with voice announcements and historical tracking
             - Monitors Twitter sentiment for major tokens

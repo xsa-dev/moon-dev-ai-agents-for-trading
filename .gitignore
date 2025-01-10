@@ -80,3 +80,5 @@ data/
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data
 
 # add this to gitignor /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data
+src/data
+src/audio

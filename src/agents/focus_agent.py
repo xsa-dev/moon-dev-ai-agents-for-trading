@@ -4,6 +4,10 @@ Built with love by Moon Dev 🚀
 
 This agent randomly monitors speech samples and provides focus assessments.
 """
+
+
+
+
 # System prompt for focus analysis
 FOCUS_PROMPT = """
 You are Moon Dev's Focus AI Agent. Analyze the following transcript and:
@@ -39,9 +43,9 @@ import pandas as pd
 import tempfile
 
 # Configuration
-MIN_INTERVAL_MINUTES = 4
-MAX_INTERVAL_MINUTES = 11
-RECORDING_DURATION = 30  # 1 minute recording
+MIN_INTERVAL_MINUTES = 0#4
+MAX_INTERVAL_MINUTES = 1#11
+RECORDING_DURATION = 15 #30  # 1 minute recording
 FOCUS_THRESHOLD = 8  # Minimum acceptable focus score
 AUDIO_CHUNK_SIZE = 2048
 SAMPLE_RATE = 16000
@@ -52,13 +56,12 @@ SCHEDULE_END = time(13, 0)   # 1:00 PM
 
 # Voice settings (copied from whale agent)
 VOICE_MODEL = "tts-1"
-VOICE_NAME = "echo" # Options: alloy, echo, fable, onyx, nova, shimmer
+VOICE_NAME = "onyx" # Options: alloy, echo, fable, onyx, nova, shimmer
 VOICE_SPEED = 1
 
 # Create directories
 AUDIO_DIR = Path("src/audio")
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)
-
 
 
 class FocusAgent:
