@@ -16,6 +16,8 @@ Consider:
 - Random chat/topics = low focus
 - Non-work discussion = low focus
 
+BE VERY STRICT WITH YOUR RATING, LIKE A DRILL SERGEANT. DONT GO EASY ON ME. I HAVE TO BE VERY FOCUSED, AND YOUR JOB IS TO MAKE ME VERY FOCUSED.
+
 RESPOND IN THIS EXACT FORMAT:
 X/10
 "Quote OR motivational sentence"
@@ -34,6 +36,7 @@ from dotenv import load_dotenv
 from random import randint, uniform
 import threading
 import pandas as pd
+import tempfile
 
 # Configuration
 MIN_INTERVAL_MINUTES = 4
@@ -165,11 +168,7 @@ class FocusAgent:
             if not force_voice:
                 return
                 
-            # Generate unique filename
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            speech_file = AUDIO_DIR / f"focus_audio_{timestamp}.mp3"
-            
-            # Generate speech
+            # Generate speech directly to memory and play
             response = self.openai_client.audio.speech.create(
                 model=VOICE_MODEL,
                 voice=VOICE_NAME,
@@ -177,20 +176,21 @@ class FocusAgent:
                 input=message
             )
             
-            # Save and play audio
-            with open(speech_file, 'wb') as f:
+            # Create temporary file in system temp directory
+            with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
                 for chunk in response.iter_bytes():
-                    f.write(chunk)
-            
+                    temp_file.write(chunk)
+                temp_path = temp_file.name
+
             # Play audio based on OS
             if os.name == 'posix':
-                os.system(f"afplay {speech_file}")
+                os.system(f"afplay {temp_path}")
             else:
-                os.system(f"start {speech_file}")
+                os.system(f"start {temp_path}")
                 time_lib.sleep(5)
             
-            # Cleanup
-            speech_file.unlink()
+            # Cleanup temp file
+            os.unlink(temp_path)
             
         except Exception as e:
             cprint(f"❌ Error in announcement: {str(e)}", "red")
