@@ -33,10 +33,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from random import randint, uniform
 import threading
+import pandas as pd
 
 # Configuration
-MIN_INTERVAL_MINUTES = 3
-MAX_INTERVAL_MINUTES = 8
+MIN_INTERVAL_MINUTES = 4
+MAX_INTERVAL_MINUTES = 11
 RECORDING_DURATION = 30  # 1 minute recording
 FOCUS_THRESHOLD = 8  # Minimum acceptable focus score
 AUDIO_CHUNK_SIZE = 2048
@@ -78,6 +79,17 @@ class FocusAgent:
         
         self.is_recording = False
         self.current_transcript = []
+        
+        # Add data directory path
+        self.data_dir = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data")
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.focus_log_path = self.data_dir / "focus_history.csv"
+        
+        # Initialize focus history DataFrame if file doesn't exist
+        if not self.focus_log_path.exists():
+            self._create_focus_log()
+            
+        cprint("📊 Focus history will be logged to: " + str(self.focus_log_path), "green")
         
         self._check_schedule()
         
@@ -207,14 +219,47 @@ class FocusAgent:
             cprint(f"❌ Error analyzing focus: {str(e)}", "red")
             return 0, "Error analyzing focus"
 
+    def _create_focus_log(self):
+        """Create empty focus history CSV"""
+        df = pd.DataFrame(columns=['timestamp', 'focus_score', 'quote'])
+        df.to_csv(self.focus_log_path, index=False)
+        cprint("🌟 Moon Dev's Focus History log created!", "green")
+
+    def _log_focus_data(self, score, quote):
+        """Log focus data to CSV"""
+        try:
+            # Create new row
+            new_data = {
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'focus_score': score,
+                'quote': quote.strip('"')  # Remove quotation marks
+            }
+            
+            # Read existing CSV
+            df = pd.read_csv(self.focus_log_path)
+            
+            # Append new data
+            df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
+            
+            # Save back to CSV
+            df.to_csv(self.focus_log_path, index=False)
+            
+            cprint("📝 Focus data logged successfully!", "green")
+            
+        except Exception as e:
+            cprint(f"❌ Error logging focus data: {str(e)}", "red")
+
     def process_transcript(self, transcript):
         """Process transcript and provide focus assessment"""
         score, message = self.analyze_focus(transcript)
         
+        # Log the data
+        self._log_focus_data(score, message)
+        
         # Determine if voice announcement needed
         needs_voice = score < FOCUS_THRESHOLD
         
-        # Format message (now cleaner without labels)
+        # Format message
         formatted_message = f"{score}/10\n{message}"
         
         # Announce
