@@ -43,9 +43,9 @@ import pandas as pd
 import tempfile
 
 # Configuration
-MIN_INTERVAL_MINUTES = 0#4
-MAX_INTERVAL_MINUTES = 1#11
-RECORDING_DURATION = 15 #30  # 1 minute recording
+MIN_INTERVAL_MINUTES = 4
+MAX_INTERVAL_MINUTES = 11
+RECORDING_DURATION = 30  # seconds
 FOCUS_THRESHOLD = 8  # Minimum acceptable focus score
 AUDIO_CHUNK_SIZE = 2048
 SAMPLE_RATE = 16000
