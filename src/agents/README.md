@@ -17,6 +17,12 @@
 [] coin gecko agent - if i give a agent or swarm access to all of coingecko data from 2014, it will be able to cook no doubt.
     - i want these agents to look for high volume tokens that are not on major exchanges
 
+[] listing arb agent - idea is to find freakishly high volume tokens that keep it up for a few days, or weeks that are not on binance or cb. 
+    - current problem is that its a fuck ton of data i need to go through, like 15,000 tokens on coingecko 
+    - i have birdeye and coin gecko, i can set up scanners that are looking for high volume tokens, no worries, its just time and api cost. 
+
+    - possibly look thorugh recently added coins, they are fresh on coingecko 
+
 
 
 

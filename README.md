@@ -73,7 +73,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - Copy Agent (`copy_agent.py`): monitors copy bot for potential trades
 - Whale Agent (`whale_agent.py`): monitors whale activity and announces when a whale enters the market
 - Sentiment Agent (`sentiment_agent.py`): analyzes Twitter sentiment for crypto tokens with voice announcements
-- Exchange Arbitrage Agent (`exchangearb_agent.py`): identifies promising Solana tokens on CoinGecko before they reach major exchanges like Binance and Coinbase, using parallel AI analysis for technical and fundamental insights
+- Listing Arbitrage Agent (`listingarb_agent.py`): identifies promising Solana tokens on CoinGecko before they reach major exchanges like Binance and Coinbase, using parallel AI analysis for technical and fundamental insights
 - Focus Agent (`focus_agent.py`): randomly samples audio during coding sessions to maintain productivity, providing focus scores and voice alerts when focus drops (~$10/month, perfect for voice-to-code workflows)
 
 ## 🚀 Project Progress & Roadmap
@@ -97,7 +97,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
-- [x] 1/11 - built an Exchange Arbitrage Agent that identifies promising Solana tokens before they reach major exchanges
+- [x] 1/11 - built a Listing Arbitrage Agent that identifies promising Solana tokens before they reach major exchanges
             - Uses parallel AI analysis with technical and fundamental agents
             - Filters by market cap and volume criteria
             - Saves analysis results and buy recommendations to CSV
