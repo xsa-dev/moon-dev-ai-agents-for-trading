@@ -236,7 +236,7 @@ Remember to reference specific data points from the OHLCV table in your analysis
             # Get AI response with increased context
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=1500,  # Increased for more detailed analysis
+                max_tokens=300,  # Increased for more detailed analysis
                 temperature=0.7,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}]
