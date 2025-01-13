@@ -9,7 +9,7 @@ from termcolor import cprint
 from dotenv import load_dotenv
 import time
 from datetime import datetime, timedelta
-from config import *
+from src.config import MONITORED_TOKENS, EXCLUDED_TOKENS, SLEEP_BETWEEN_RUNS_MINUTES
 
 # Add project root to Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -93,7 +93,7 @@ def run_agents():
         cprint(f"\n❌ Fatal error in main loop: {str(e)}", "red")
         raise
 
-if __name__ == "__main__":
+def check_agents():
     cprint("\n🌙 Moon Dev AI Agent Trading System Starting...", "white", "on_blue")
     cprint("\n📊 Active Agents:", "white", "on_blue")
     for agent, active in ACTIVE_AGENTS.items():
@@ -101,4 +101,7 @@ if __name__ == "__main__":
         cprint(f"  • {agent.title()}: {status}", "white", "on_blue")
     print("\n")
 
+
+if __name__ == "__main__":
+    check_agents()
     run_agents()
