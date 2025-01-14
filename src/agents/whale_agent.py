@@ -14,11 +14,13 @@ from dotenv import load_dotenv
 import openai
 from pathlib import Path
 from src import nice_funcs as n
+from src import nice_funcs_hl as hl  # Add import for hyperliquid functions
 from src.agents.api import MoonDevAPI
 from collections import deque
 from src.agents.base_agent import BaseAgent
 import traceback
 import numpy as np
+import anthropic
 
 # Get the project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -29,10 +31,36 @@ LOOKBACK_PERIODS = {
     '15min': 15  # Simplified to just 15 minutes
 }
 
+# Whale Detection Settings
+WHALE_THRESHOLD_MULTIPLIER = 1.02 #1.25  # Multiplier for average change to detect whale activity (e.g. 1.25 = 25% above average)
+
+# AI Settings - Override config.py if set
+from src import config
+
+# Only set these if you want to override config.py settings
+AI_MODEL = False  # Set to model name to override config.AI_MODEL
+AI_TEMPERATURE = 0  # Set > 0 to override config.AI_TEMPERATURE
+AI_MAX_TOKENS = 50  # Set > 0 to override config.AI_MAX_TOKENS
+
 # Voice settings
 VOICE_MODEL = "tts-1"  # or tts-1-hd for higher quality
 VOICE_NAME = "shimmer"   # Options: alloy, echo, fable, onyx, nova, shimmer
 VOICE_SPEED = 1      # 0.25 to 4.0
+
+# AI Analysis Prompt
+WHALE_ANALYSIS_PROMPT = """You must respond in exactly 3 lines:
+Line 1: Only write BUY, SELL, or NOTHING
+Line 2: One short reason why
+Line 3: Only write "Confidence: X%" where X is 0-100
+
+Analyze BTC with {pct_change}% OI change in {interval}m:
+Current OI: ${current_oi}
+Previous OI: ${previous_oi}
+{market_data}
+
+Large OI increases with price up may indicate strong momentum
+Large OI decreases with price down may indicate capitulation which can be a good buy or a confirmation of a trend, you will need to look at the data
+"""
 
 class WhaleAgent(BaseAgent):
     """Dez the Whale Watcher 🐋"""
@@ -41,13 +69,34 @@ class WhaleAgent(BaseAgent):
         """Initialize Dez the Whale Agent"""
         super().__init__('whale')  # Initialize base agent with type
         
+        # Set AI parameters - use config values unless overridden
+        self.ai_model = AI_MODEL if AI_MODEL else config.AI_MODEL
+        self.ai_temperature = AI_TEMPERATURE if AI_TEMPERATURE > 0 else config.AI_TEMPERATURE
+        self.ai_max_tokens = AI_MAX_TOKENS if AI_MAX_TOKENS > 0 else config.AI_MAX_TOKENS
+        
+        print(f"🤖 Using AI Model: {self.ai_model}")
+        if AI_MODEL or AI_TEMPERATURE > 0 or AI_MAX_TOKENS > 0:
+            print("⚠️ Note: Using some override settings instead of config.py defaults")
+            if AI_MODEL:
+                print(f"  - Model: {AI_MODEL}")
+            if AI_TEMPERATURE > 0:
+                print(f"  - Temperature: {AI_TEMPERATURE}")
+            if AI_MAX_TOKENS > 0:
+                print(f"  - Max Tokens: {AI_MAX_TOKENS}")
+        
         load_dotenv()
         
-        # Get API key using the correct environment variable name
-        api_key = os.getenv("OPENAI_KEY")
-        if not api_key:
+        # Get API keys
+        openai_key = os.getenv("OPENAI_KEY")
+        anthropic_key = os.getenv("ANTHROPIC_KEY")
+        
+        if not openai_key:
             raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
-        openai.api_key = api_key
+        if not anthropic_key:
+            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
+            
+        openai.api_key = openai_key
+        self.client = anthropic.Anthropic(api_key=anthropic_key)
         
         self.api = MoonDevAPI()
         
@@ -240,8 +289,85 @@ class WhaleAgent(BaseAgent):
         
         return changes
         
+    def _analyze_opportunity(self, changes, market_data):
+        """Get AI analysis of the whale movement"""
+        try:
+            # Prepare the context
+            context = WHALE_ANALYSIS_PROMPT.format(
+                pct_change=f"{changes['btc']:.2f}",
+                interval=changes['interval'],
+                current_oi=self._format_number_for_speech(changes['current_btc']),
+                previous_oi=self._format_number_for_speech(changes['start_btc']),
+                market_data=market_data.tail(5).to_string() if market_data is not None else "No market data available"
+            )
+            
+            print(f"\n🤖 Analyzing whale movement with AI...")
+            
+            # Get AI analysis using instance settings
+            message = self.client.messages.create(
+                model=self.ai_model,
+                max_tokens=self.ai_max_tokens,
+                temperature=self.ai_temperature,
+                messages=[{
+                    "role": "user",
+                    "content": context
+                }]
+            )
+            
+            # Handle response
+            if not message or not message.content:
+                print("❌ No response from AI")
+                return None
+                
+            # Handle TextBlock response
+            response = message.content
+            if isinstance(response, list):
+                if len(response) > 0 and hasattr(response[0], 'text'):
+                    response = response[0].text
+                else:
+                    print("❌ Invalid response format from AI")
+                    return None
+            
+            # Parse response
+            lines = [line.strip() for line in response.split('\n') if line.strip()]
+            if not lines:
+                print("❌ Empty response from AI")
+                return None
+                
+            # First line should be the action
+            action = lines[0].strip().upper()
+            if action not in ['BUY', 'SELL', 'NOTHING']:
+                print(f"⚠️ Invalid action: {action}")
+                return None
+                
+            # Rest is analysis
+            analysis = '\n'.join(lines[1:]) if len(lines) > 1 else ""
+            
+            # Extract confidence
+            confidence = 50  # Default confidence
+            for line in lines:
+                if 'confidence' in line.lower():
+                    try:
+                        import re
+                        matches = re.findall(r'(\d+)%', line)
+                        if matches:
+                            confidence = int(matches[0])
+                    except:
+                        print("⚠️ Could not parse confidence, using default")
+            
+            return {
+                'action': action,
+                'analysis': analysis,
+                'confidence': confidence
+            }
+            
+        except Exception as e:
+            print(f"❌ Error in AI analysis: {str(e)}")
+            traceback.print_exc()
+            return None
+            
     def _format_announcement(self, changes):
-        """Format OI changes into a speech-friendly message with whale detection"""
+        """Format OI changes into a speech-friendly message with whale detection and AI analysis"""
         if changes:
             btc_change = changes['btc']
             interval = changes['interval']
@@ -252,15 +378,30 @@ class WhaleAgent(BaseAgent):
             # Check for whale activity
             is_whale = self._detect_whale_activity(btc_change)
             
-            # Build message
+            # Get market data for analysis if it's a whale movement
+            market_data = None
             if is_whale:
-                message = "🐋 Whale Alert! "
-            else:
-                message = ""
-                
-            message += f"BTC OI {btc_direction} {abs(btc_change):.3f}% in {interval}m, "
+                print("\n📊 Fetching market data for analysis...")
+                market_data = hl.get_data(
+                    symbol='BTC',
+                    timeframe='15m',
+                    bars=100,
+                    add_indicators=True
+                )
+            
+            # Build base message
+            message = f"ayo moon dev 777! BTC OI {btc_direction} {abs(btc_change):.3f}% in {interval}m, "
             message += f"from {self._format_number_for_speech(changes['start_btc'])} "
             message += f"to {self._format_number_for_speech(changes['current_btc'])}"
+            
+            # Add AI analysis for whale movements
+            if is_whale:
+                analysis = self._analyze_opportunity(changes, market_data)
+                if analysis:
+                    # Get first line of analysis by splitting and taking first element
+                    analysis_first_line = analysis['analysis'].split('\n')[0] if analysis['analysis'] else ""
+                    message += f" | AI suggests {analysis['action']} with {analysis['confidence']}% confidence. "
+                    message += f"Analysis: {analysis_first_line} 🌙"
             
             # Return both message and whale status
             return message, is_whale
@@ -299,11 +440,7 @@ class WhaleAgent(BaseAgent):
             if not is_whale:
                 return
                 
-            # Generate unique filename based on timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            speech_file = self.audio_dir / f"temp_audio_{timestamp}.mp3"
-            
-            # Generate speech using OpenAI with proper streaming
+            # Generate speech using OpenAI
             response = openai.audio.speech.create(
                 model=VOICE_MODEL,
                 voice=VOICE_NAME,
@@ -311,27 +448,18 @@ class WhaleAgent(BaseAgent):
                 input=message
             )
             
-            # Save and play the audio using the new streaming method
-            with open(speech_file, 'wb') as f:
-                for chunk in response.iter_bytes():
-                    f.write(chunk)
+            # Save and play the audio
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            audio_file = self.audio_dir / f"whale_alert_{timestamp}.mp3"
             
-            # Play the audio (platform specific)
-            if os.name == 'posix':  # macOS/Linux
-                os.system(f"afplay {speech_file}")
-            else:  # Windows
-                os.system(f"start {speech_file}")
-                time.sleep(5)  # Give it time to start playing
+            response.stream_to_file(audio_file)
             
-            # Delete the file after playing
-            try:
-                speech_file.unlink()  # Delete the temporary audio file
-                print("🧹 Cleaned up temporary audio file")
-            except Exception as e:
-                print(f"⚠️ Couldn't delete audio file: {e}")
-                
+            # Play audio using system command
+            os.system(f"afplay {audio_file}")
+            
         except Exception as e:
-            print(f"❌ Error in text-to-speech: {str(e)}")
+            print(f"❌ Error in announcement: {str(e)}")
+            traceback.print_exc()
 
     def _announce_initial_summary(self):
         """Announce the current state of the market based on existing data"""
@@ -398,12 +526,12 @@ class WhaleAgent(BaseAgent):
                 return False
                 
             avg_change = historical_changes.mean()
-            threshold = avg_change * 1.25
+            threshold = avg_change * WHALE_THRESHOLD_MULTIPLIER
             
             print(f"\n🔍 Whale Detection Analysis:")
             print(f"Current change: {abs(current_change):.4f}%")
             print(f"Average change: {avg_change:.4f}%")
-            print(f"Threshold (125% of avg): {threshold:.4f}%")
+            print(f"Threshold ({(WHALE_THRESHOLD_MULTIPLIER-1)*100:.0f}% above avg): {threshold:.4f}%")
             print(f"Is whale? {'Yes! 🐋' if abs(current_change) > threshold else 'No'}")
             
             return abs(current_change) > threshold
