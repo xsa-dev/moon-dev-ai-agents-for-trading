@@ -26,7 +26,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
-CHECK_INTERVAL_MINUTES = 10  # How often to check funding rates
+CHECK_INTERVAL_MINUTES = 5  # How often to check funding rates
 NEGATIVE_THRESHOLD = -5 # AI Run & Alert if annual rate below -1%
 POSITIVE_THRESHOLD = 20  # AI Run & Alert if annual rate above 20%
 

@@ -26,13 +26,13 @@ import anthropic
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
-CHECK_INTERVAL_MINUTES = 10  # How often to check OI (can be set to 0.5 for 30 seconds)
+CHECK_INTERVAL_MINUTES = 5  # How often to check OI (can be set to 0.5 for 30 seconds)
 LOOKBACK_PERIODS = {
     '15min': 15  # Simplified to just 15 minutes
 }
 
 # Whale Detection Settings
-WHALE_THRESHOLD_MULTIPLIER = 1.02 #1.25  # Multiplier for average change to detect whale activity (e.g. 1.25 = 25% above average)
+WHALE_THRESHOLD_MULTIPLIER = 1.31 #1.25  # Multiplier for average change to detect whale activity (e.g. 1.25 = 25% above average)
 
 # AI Settings - Override config.py if set
 from src import config
