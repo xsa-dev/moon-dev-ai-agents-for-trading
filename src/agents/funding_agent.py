@@ -27,8 +27,8 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
 CHECK_INTERVAL_MINUTES = 10  # How often to check funding rates
-NEGATIVE_THRESHOLD = 0 # Alert if annual rate below -1%
-POSITIVE_THRESHOLD = 20.0  # Alert if annual rate above 20%
+NEGATIVE_THRESHOLD = -5 # AI Run & Alert if annual rate below -1%
+POSITIVE_THRESHOLD = 20  # AI Run & Alert if annual rate above 20%
 
 # OHLCV Data Settings
 TIMEFRAME = '15m'  # Candlestick timeframe
@@ -286,10 +286,6 @@ class FundingAgent(BaseAgent):
         """Format funding rate changes and analysis into a speech-friendly message"""
         try:
             messages = []
-            coin_count = len(opportunities)
-            
-            # Add intro with count of opportunities
-            intro = f"ayo moon dev, found {coin_count} {'opportunity' if coin_count == 1 else 'opportunities'} 777! "
             
             for symbol, data in opportunities.items():
                 # Get full name from mapping
@@ -301,19 +297,19 @@ class FundingAgent(BaseAgent):
                 
                 if rate < NEGATIVE_THRESHOLD:
                     messages.append(
-                        f"For {token_name}: Negative funding at {rate:.2f}% annual. "
+                        f"{token_name} has negative funding at {rate:.2f}% annual. "
                         f"AI suggests {action} with {confidence}% confidence. "
                         f"Analysis: {analysis} 🌙"
                     )
                 elif rate > POSITIVE_THRESHOLD:
                     messages.append(
-                        f"For {token_name}: High funding at {rate:.2f}% annual. "
+                        f"{token_name} has high funding at {rate:.2f}% annual. "
                         f"AI suggests {action} with {confidence}% confidence. "
                         f"Analysis: {analysis} 🌙"
                     )
                 
             if messages:
-                return intro + " | ".join(messages) + "!"
+                return "ayo moon dev 777! " + " | ".join(messages) + "!"
             return None
             
         except Exception as e:
