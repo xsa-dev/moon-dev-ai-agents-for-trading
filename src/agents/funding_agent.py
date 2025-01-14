@@ -27,7 +27,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
 CHECK_INTERVAL_MINUTES = 10  # How often to check funding rates
-NEGATIVE_THRESHOLD = -5 # AI Run & Alert if annual rate below -1%
+NEGATIVE_THRESHOLD = 10 # AI Run & Alert if annual rate below -1%
 POSITIVE_THRESHOLD = 20  # AI Run & Alert if annual rate above 20%
 
 # OHLCV Data Settings
@@ -347,32 +347,18 @@ class FundingAgent(BaseAgent):
     def load_history(self):
         """Load or initialize historical funding rate data"""
         try:
-            if self.history_file.exists():
-                df = pd.read_csv(self.history_file)
-                # Ensure consistent column structure
-                required_columns = ['timestamp', 'symbol', 'funding_rate', 'annual_rate']
-                if not all(col in df.columns for col in required_columns):
-                    print("🔄 Restructuring history file to new format...")
-                    self.funding_history = pd.DataFrame(columns=required_columns)
-                else:
-                    df['timestamp'] = pd.to_datetime(df['timestamp'])
-                    self.funding_history = df
-                print(f"📈 Loaded {len(self.funding_history)} historical funding rate records")
-            else:
-                self.funding_history = pd.DataFrame(columns=['timestamp', 'symbol', 'funding_rate', 'annual_rate'])
-                print("📝 Created new funding rate history file")
+            # Always start with clean history using the new format
+            self.funding_history = pd.DataFrame(columns=['timestamp', 'symbol', 'funding_rate', 'annual_rate'])
+            print("📝 Initialized new funding rate history")
             
-            # Clean up old data (keep only last 24 hours)
-            if not self.funding_history.empty:
-                cutoff_time = datetime.now() - timedelta(hours=24)
-                self.funding_history = self.funding_history[
-                    self.funding_history['timestamp'] > cutoff_time
-                ]
-                self.funding_history.to_csv(self.history_file, index=False)
+            if self.history_file.exists():
+                # Keep just one backup file
+                backup_file = self.data_dir / "funding_history_backup.csv"
+                os.rename(self.history_file, backup_file)
+                print(f"📦 Backed up old history file")
                 
         except Exception as e:
             print(f"❌ Error loading history: {str(e)}")
-            print("🔄 Creating new history file with correct structure...")
             self.funding_history = pd.DataFrame(columns=['timestamp', 'symbol', 'funding_rate', 'annual_rate'])
             
     def _get_current_funding(self):
@@ -382,13 +368,31 @@ class FundingAgent(BaseAgent):
             df = self.api.get_funding_rates()
             
             if df is not None and not df.empty:
+                # Debug raw data
+                print("\n🔬 Raw funding data for BNB:")
+                if 'BNB' in df['symbol'].values:
+                    bnb_data = df[df['symbol'] == 'BNB']
+                    print(f"   Raw values: {bnb_data[['funding_rate', 'annual_rate']].to_dict('records')}")
+                
                 # Get latest data for each symbol
                 current_data = df.sort_values('timestamp').groupby('symbol').last().reset_index()
+                
+                # Debug after groupby
+                print("\n🔬 After groupby for BNB:")
+                if 'BNB' in current_data['symbol'].values:
+                    bnb_data = current_data[current_data['symbol'] == 'BNB']
+                    print(f"   Values: {bnb_data[['funding_rate', 'annual_rate']].to_dict('records')}")
                 
                 # Ensure numeric columns are float
                 numeric_cols = ['funding_rate', 'annual_rate']
                 for col in numeric_cols:
                     current_data[col] = pd.to_numeric(current_data[col], errors='coerce')
+                    
+                # Debug after numeric conversion
+                print("\n🔬 After numeric conversion for BNB:")
+                if 'BNB' in current_data['symbol'].values:
+                    bnb_data = current_data[current_data['symbol'] == 'BNB']
+                    print(f"   Values: {bnb_data[['funding_rate', 'annual_rate']].to_dict('records')}")
                 
                 print("\n📊 Current Funding Rates:")
                 print("   Symbol | Funding Rate | Annual Rate")
@@ -405,26 +409,52 @@ class FundingAgent(BaseAgent):
             return None
 
     def _save_to_history(self, current_data):
-        """Save current funding data to history"""
+        """Save current funding data to history in wide format (all symbols in one row)"""
         try:
             if current_data is not None and not current_data.empty:
-                # Append new data
-                self.funding_history = pd.concat([self.funding_history, current_data], ignore_index=True)
+                # Convert to wide format with all symbols in one row
+                wide_data = pd.DataFrame()
+                wide_data['timestamp'] = [current_data['timestamp'].iloc[0]]  # Use first timestamp
                 
-                # Drop duplicates based on timestamp and symbol
+                # Add columns for each symbol's funding and annual rates
+                for _, row in current_data.iterrows():
+                    symbol = row['symbol']
+                    wide_data[f'{symbol}_funding_rate'] = row['funding_rate']
+                    wide_data[f'{symbol}_annual_rate'] = row['annual_rate']
+                
+                # Concatenate with existing history
+                if self.funding_history.empty:
+                    self.funding_history = wide_data
+                else:
+                    self.funding_history = pd.concat([self.funding_history, wide_data], ignore_index=True)
+                
+                # Drop duplicates based on timestamp
                 self.funding_history = self.funding_history.drop_duplicates(
-                    subset=['timestamp', 'symbol'], 
+                    subset=['timestamp'], 
                     keep='last'
                 )
+                
+                # Keep only last 24 hours of data
+                cutoff_time = datetime.now() - timedelta(hours=24)
+                self.funding_history = self.funding_history[
+                    pd.to_datetime(self.funding_history['timestamp']) > cutoff_time
+                ]
                 
                 # Sort by timestamp
                 self.funding_history = self.funding_history.sort_values('timestamp')
                 
                 # Save to file
                 self.funding_history.to_csv(self.history_file, index=False)
+                print("✅ History saved successfully")
                 
         except Exception as e:
             print(f"❌ Error saving to history: {str(e)}")
+            print("Debug info:")
+            print(f"Current data shape: {current_data.shape}")
+            print(f"Current data columns: {current_data.columns.tolist()}")
+            print(f"History shape: {self.funding_history.shape}")
+            print(f"History columns: {self.funding_history.columns.tolist()}")
+            traceback.print_exc()
 
     def run_monitoring_cycle(self):
         """Run one monitoring cycle"""
