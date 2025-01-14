@@ -102,7 +102,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
             - Uses AI to analyze funding opportunities with technical context
             - Provides voice announcements for significant funding events
             - Tracks historical funding data for better analysis
-- [x] 1/11 - built a Listing Arbitrage Agent that identifies promising Solana tokens before they reach major exchanges
+- [x] 1/12 - built a Listing Arbitrage Agent that identifies promising Solana tokens before they reach major exchanges
             - Uses parallel AI analysis with technical and fundamental agents
             - Filters by market cap and volume criteria
             - Saves analysis results and buy recommendations to CSV
