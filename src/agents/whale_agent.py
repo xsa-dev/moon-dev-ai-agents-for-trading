@@ -2,7 +2,7 @@
 🐳 Moon Dev's Whale Watcher
 Built with love by Moon Dev 🚀
 
-Dez the Whale Agent tracks open interest changes across different timeframes and announces market moves via OpenAI TTS.
+Dez the Whale Agent tracks open interest changes across different timeframes and announces market moves if she sees anomalies 
 """
 
 import os
