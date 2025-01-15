@@ -87,6 +87,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - [x] Risk management agent with PnL limits
 - [x] Risk agent minimum balance protection (1/8/25)
 - [x] CopyBot portfolio analyzer (1/8/25)
+- [x] Comprehensive API access for Quantalete members (1/15/25)
 
 ### Phase 2: Advanced Features 🚀
 - [ ] Portfolio optimization
@@ -98,6 +99,12 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 1/15 - Released comprehensive API access with detailed documentation
+            - Historical liquidation data endpoints
+            - Real-time funding rate monitoring
+            - New Solana token launch tracking
+            - Detailed & combined ETH/BTC open interest historical data
+            - CopyBot data access for reference (follow list & their recent transactions)
 - [x] 1/14 - Added Funding Rate Agent that monitors and announces extreme funding rates
             - Uses AI to analyze funding opportunities with technical context
             - Provides voice announcements for significant funding events
