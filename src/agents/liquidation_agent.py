@@ -322,10 +322,12 @@ class LiquidationAgent(BaseAgent):
             # Convert content to string and clean it up
             content = str(message.content)
             
-            # Clean up any TextBlock formatting and brackets
+            # Extract actual text from TextBlock if present
+            if "TEXTBLOCK(TEXT=" in content:
+                content = content.split("TEXTBLOCK(TEXT=")[1].split(",")[0]
+            
+            # Clean up any remaining formatting
             content = content.replace('[', '').replace(']', '')
-            content = content.replace('TEXTBLOCK(TEXT=', '')
-            content = content.replace('TYPE=TEXT)', '')
             content = content.replace('\\N', '\n')
             content = content.replace('\\n', '\n')
             content = content.replace("'", "")
