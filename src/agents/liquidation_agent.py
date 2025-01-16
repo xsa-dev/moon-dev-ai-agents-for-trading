@@ -30,6 +30,10 @@ CHECK_INTERVAL_MINUTES = 5  # How often to check liquidations
 LIQUIDATION_ROWS = 10000   # Number of rows to fetch each time
 LIQUIDATION_THRESHOLD = 1.5  # Multiplier for average liquidation to detect significant events
 
+# OHLCV Data Settings
+TIMEFRAME = '15m'  # Candlestick timeframe
+LOOKBACK_BARS = 100  # Number of candles to analyze
+
 # Select which time window to use for comparisons (options: 15, 60, 240)
 # 15 = 15 minutes (most reactive to sudden changes)
 # 60 = 1 hour (medium-term changes)
@@ -51,21 +55,23 @@ VOICE_SPEED = 1
 
 # AI Analysis Prompt
 LIQUIDATION_ANALYSIS_PROMPT = """
-
 You must respond in exactly 3 lines:
 Line 1: Only write BUY, SELL, or NOTHING
 Line 2: One short reason why
 Line 3: Only write "Confidence: X%" where X is 0-100
 
-Analyze market with {pct_change}% increase in liquidations:
-Current Total Liquidations: ${current_size:,.2f}
-Previous Total Liquidations: ${previous_size:,.2f}
+Analyze market with total {pct_change}% increase in liquidations:
+
+Current Long Liquidations: ${current_longs:,.2f} ({pct_change_longs:+.1f}% change)
+Current Short Liquidations: ${current_shorts:,.2f} ({pct_change_shorts:+.1f}% change)
 Time Period: Last {LIQUIDATION_ROWS} liquidation events
 
-Large liquidation increases often indicate potential reversals
-Extremely large liquidations can signal capitulation which could lead to a bottom or top
-Consider market direction and size of liquidations for context
+Market Data (Last {LOOKBACK_BARS} {TIMEFRAME} candles):
+{market_data}
 
+Large long liquidations often indicate potential bottoms (shorts taking profit)
+Large short liquidations often indicate potential tops (longs taking profit)
+Consider the ratio of long vs short liquidations and their relative changes
 """
 
 class LiquidationAgent(BaseAgent):
@@ -119,15 +125,24 @@ class LiquidationAgent(BaseAgent):
         print("🌊 Luna the Liquidation Agent initialized!")
         print(f"🎯 Alerting on liquidation increases above {(LIQUIDATION_THRESHOLD-1)*100:.0f}%")
         print(f"📊 Analyzing last {LIQUIDATION_ROWS} liquidation events")
+        print(f"📈 Using {LOOKBACK_BARS} {TIMEFRAME} candles for market context")
         
     def load_history(self):
         """Load or initialize historical liquidation data"""
         try:
             if self.history_file.exists():
                 self.liquidation_history = pd.read_csv(self.history_file)
+                
+                # Handle transition from old format to new format
+                if 'long_size' not in self.liquidation_history.columns:
+                    print("📝 Converting history to new format with long/short tracking...")
+                    # Assume 50/50 split for old records (we'll get accurate data on next update)
+                    self.liquidation_history['long_size'] = self.liquidation_history['total_size'] / 2
+                    self.liquidation_history['short_size'] = self.liquidation_history['total_size'] / 2
+                
                 print(f"📈 Loaded {len(self.liquidation_history)} historical liquidation records")
             else:
-                self.liquidation_history = pd.DataFrame(columns=['timestamp', 'total_size'])
+                self.liquidation_history = pd.DataFrame(columns=['timestamp', 'long_size', 'short_size', 'total_size'])
                 print("📝 Created new liquidation history file")
                 
             # Clean up old data (keep only last 24 hours)
@@ -140,7 +155,7 @@ class LiquidationAgent(BaseAgent):
                 
         except Exception as e:
             print(f"❌ Error loading history: {str(e)}")
-            self.liquidation_history = pd.DataFrame(columns=['timestamp', 'total_size'])
+            self.liquidation_history = pd.DataFrame(columns=['timestamp', 'long_size', 'short_size', 'total_size'])
             
     def _get_current_liquidations(self):
         """Get current liquidation data"""
@@ -163,75 +178,127 @@ class LiquidationAgent(BaseAgent):
                 one_hour = current_time - timedelta(hours=1)
                 four_hours = current_time - timedelta(hours=4)
                 
-                # Calculate totals for each time window
-                fifteen_min_total = df[df['datetime'] >= fifteen_min]['usd_value'].sum()
-                one_hour_total = df[df['datetime'] >= one_hour]['usd_value'].sum()
-                four_hour_total = df[df['datetime'] >= four_hours]['usd_value'].sum()
+                # Separate long and short liquidations
+                longs = df[df['side'] == 'SELL']  # SELL side = long liquidation
+                shorts = df[df['side'] == 'BUY']  # BUY side = short liquidation
                 
-                # Get event counts for each window
-                fifteen_min_events = len(df[df['datetime'] >= fifteen_min])
-                one_hour_events = len(df[df['datetime'] >= one_hour])
-                four_hour_events = len(df[df['datetime'] >= four_hours])
+                # Calculate totals for each time window and type
+                fifteen_min_longs = longs[longs['datetime'] >= fifteen_min]['usd_value'].sum()
+                fifteen_min_shorts = shorts[shorts['datetime'] >= fifteen_min]['usd_value'].sum()
+                one_hour_longs = longs[longs['datetime'] >= one_hour]['usd_value'].sum()
+                one_hour_shorts = shorts[shorts['datetime'] >= one_hour]['usd_value'].sum()
+                four_hour_longs = longs[longs['datetime'] >= four_hours]['usd_value'].sum()
+                four_hour_shorts = shorts[shorts['datetime'] >= four_hours]['usd_value'].sum()
+                
+                # Get event counts
+                fifteen_min_long_events = len(longs[longs['datetime'] >= fifteen_min])
+                fifteen_min_short_events = len(shorts[shorts['datetime'] >= fifteen_min])
+                one_hour_long_events = len(longs[longs['datetime'] >= one_hour])
+                one_hour_short_events = len(shorts[shorts['datetime'] >= one_hour])
+                four_hour_long_events = len(longs[longs['datetime'] >= four_hours])
+                four_hour_short_events = len(shorts[shorts['datetime'] >= four_hours])
                 
                 # Calculate percentage change for active window
-                pct_change = 0
+                pct_change_longs = 0
+                pct_change_shorts = 0
                 if not self.liquidation_history.empty:
-                    previous_size = self.liquidation_history['total_size'].iloc[-1]
+                    previous_record = self.liquidation_history.iloc[-1]
                     if COMPARISON_WINDOW == 60:
-                        current = one_hour_total
+                        current_longs = one_hour_longs
+                        current_shorts = one_hour_shorts
                     elif COMPARISON_WINDOW == 240:
-                        current = four_hour_total
+                        current_longs = four_hour_longs
+                        current_shorts = four_hour_shorts
                     else:
-                        current = fifteen_min_total
-                    pct_change = ((current - previous_size) / previous_size) * 100 if previous_size > 0 else 0
+                        current_longs = fifteen_min_longs
+                        current_shorts = fifteen_min_shorts
+                        
+                    if 'long_size' in previous_record and previous_record['long_size'] > 0:
+                        pct_change_longs = ((current_longs - previous_record['long_size']) / previous_record['long_size']) * 100
+                    if 'short_size' in previous_record and previous_record['short_size'] > 0:
+                        pct_change_shorts = ((current_shorts - previous_record['short_size']) / previous_record['short_size']) * 100
                 
                 # Print fun box with liquidation info
-                print("\n" + "╔" + "═" * 60 + "╗")
-                print("║            🌙 Moon Dev's Liquidation Party 💦             ║")
-                print("╠" + "═" * 60 + "╣")
+                print("\n" + "╔" + "═" * 70 + "╗")
+                print("║                🌙 Moon Dev's Liquidation Party 💦                 ║")
+                print("╠" + "═" * 70 + "╣")
                 
                 # Format each line based on which window is active
                 if COMPARISON_WINDOW == 15:
-                    print(f"║  Last 15min: ${fifteen_min_total:,.2f} ({fifteen_min_events} events) [{pct_change:+.1f}%]".ljust(61) + "║")
-                    print(f"║  Last 1hr:   ${one_hour_total:,.2f} ({one_hour_events} events)".ljust(61) + "║")
-                    print(f"║  Last 4hrs:  ${four_hour_total:,.2f} ({four_hour_events} events)".ljust(61) + "║")
+                    print(f"║  Last 15min LONGS:  ${fifteen_min_longs:,.2f} ({fifteen_min_long_events} events) [{pct_change_longs:+.1f}%]".ljust(71) + "║")
+                    print(f"║  Last 15min SHORTS: ${fifteen_min_shorts:,.2f} ({fifteen_min_short_events} events) [{pct_change_shorts:+.1f}%]".ljust(71) + "║")
+                    print(f"║  Last 1hr LONGS:    ${one_hour_longs:,.2f} ({one_hour_long_events} events)".ljust(71) + "║")
+                    print(f"║  Last 1hr SHORTS:   ${one_hour_shorts:,.2f} ({one_hour_short_events} events)".ljust(71) + "║")
+                    print(f"║  Last 4hrs LONGS:   ${four_hour_longs:,.2f} ({four_hour_long_events} events)".ljust(71) + "║")
+                    print(f"║  Last 4hrs SHORTS:  ${four_hour_shorts:,.2f} ({four_hour_short_events} events)".ljust(71) + "║")
                 elif COMPARISON_WINDOW == 60:
-                    print(f"║  Last 15min: ${fifteen_min_total:,.2f} ({fifteen_min_events} events)".ljust(61) + "║")
-                    print(f"║  Last 1hr:   ${one_hour_total:,.2f} ({one_hour_events} events) [{pct_change:+.1f}%]".ljust(61) + "║")
-                    print(f"║  Last 4hrs:  ${four_hour_total:,.2f} ({four_hour_events} events)".ljust(61) + "║")
+                    print(f"║  Last 15min LONGS:  ${fifteen_min_longs:,.2f} ({fifteen_min_long_events} events)".ljust(71) + "║")
+                    print(f"║  Last 15min SHORTS: ${fifteen_min_shorts:,.2f} ({fifteen_min_short_events} events)".ljust(71) + "║")
+                    print(f"║  Last 1hr LONGS:    ${one_hour_longs:,.2f} ({one_hour_long_events} events) [{pct_change_longs:+.1f}%]".ljust(71) + "║")
+                    print(f"║  Last 1hr SHORTS:   ${one_hour_shorts:,.2f} ({one_hour_short_events} events) [{pct_change_shorts:+.1f}%]".ljust(71) + "║")
+                    print(f"║  Last 4hrs LONGS:   ${four_hour_longs:,.2f} ({four_hour_long_events} events)".ljust(71) + "║")
+                    print(f"║  Last 4hrs SHORTS:  ${four_hour_shorts:,.2f} ({four_hour_short_events} events)".ljust(71) + "║")
                 else:  # 240 minutes (4 hours)
-                    print(f"║  Last 15min: ${fifteen_min_total:,.2f} ({fifteen_min_events} events)".ljust(61) + "║")
-                    print(f"║  Last 1hr:   ${one_hour_total:,.2f} ({one_hour_events} events)".ljust(61) + "║")
-                    print(f"║  Last 4hrs:  ${four_hour_total:,.2f} ({four_hour_events} events) [{pct_change:+.1f}%]".ljust(61) + "║")
+                    print(f"║  Last 15min LONGS:  ${fifteen_min_longs:,.2f} ({fifteen_min_long_events} events)".ljust(71) + "║")
+                    print(f"║  Last 15min SHORTS: ${fifteen_min_shorts:,.2f} ({fifteen_min_short_events} events)".ljust(71) + "║")
+                    print(f"║  Last 1hr LONGS:    ${one_hour_longs:,.2f} ({one_hour_long_events} events)".ljust(71) + "║")
+                    print(f"║  Last 1hr SHORTS:   ${one_hour_shorts:,.2f} ({one_hour_short_events} events)".ljust(71) + "║")
+                    print(f"║  Last 4hrs LONGS:   ${four_hour_longs:,.2f} ({four_hour_long_events} events) [{pct_change_longs:+.1f}%]".ljust(71) + "║")
+                    print(f"║  Last 4hrs SHORTS:  ${four_hour_shorts:,.2f} ({four_hour_short_events} events) [{pct_change_shorts:+.1f}%]".ljust(71) + "║")
                 
-                print("╚" + "═" * 60 + "╝")
+                print("╚" + "═" * 70 + "╝")
                 
-                # Return the total based on selected comparison window
+                # Return the totals based on selected comparison window
                 if COMPARISON_WINDOW == 60:
-                    return one_hour_total
+                    return one_hour_longs, one_hour_shorts
                 elif COMPARISON_WINDOW == 240:
-                    return four_hour_total
+                    return four_hour_longs, four_hour_shorts
                 else:  # Default to 15 minutes
-                    return fifteen_min_total
-            return None
+                    return fifteen_min_longs, fifteen_min_shorts
+            return None, None
             
         except Exception as e:
             print(f"❌ Error getting liquidation data: {str(e)}")
             traceback.print_exc()
-            return None
+            return None, None
             
-    def _analyze_opportunity(self, current_size, previous_size):
+    def _analyze_opportunity(self, current_longs, current_shorts, previous_longs, previous_shorts):
         """Get AI analysis of the liquidation event"""
         try:
-            # Calculate percentage change
-            pct_change = ((current_size - previous_size) / previous_size) * 100
+            # Calculate percentage changes
+            pct_change_longs = ((current_longs - previous_longs) / previous_longs) * 100 if previous_longs > 0 else 0
+            pct_change_shorts = ((current_shorts - previous_shorts) / previous_shorts) * 100 if previous_shorts > 0 else 0
+            total_pct_change = ((current_longs + current_shorts - previous_longs - previous_shorts) / 
+                              (previous_longs + previous_shorts)) * 100 if (previous_longs + previous_shorts) > 0 else 0
+            
+            # Get market data silently (BTC by default since it leads the market)
+            market_data = hl.get_data(
+                symbol="BTC",
+                timeframe=TIMEFRAME,
+                bars=LOOKBACK_BARS,
+                add_indicators=True
+            )
+            
+            if market_data is None or market_data.empty:
+                print("⚠️ Could not fetch market data, proceeding with liquidation analysis only")
+                market_data_str = "No market data available"
+            else:
+                # Format market data nicely - show last 5 candles
+                market_data_str = market_data.tail(5).to_string()
             
             # Prepare the context
             context = LIQUIDATION_ANALYSIS_PROMPT.format(
-                pct_change=f"{pct_change:.2f}",
-                current_size=current_size,
-                previous_size=previous_size,
-                LIQUIDATION_ROWS=LIQUIDATION_ROWS
+                pct_change=f"{total_pct_change:.2f}",
+                current_size=current_longs + current_shorts,
+                previous_size=previous_longs + previous_shorts,
+                LIQUIDATION_ROWS=LIQUIDATION_ROWS,
+                current_longs=current_longs,
+                current_shorts=current_shorts,
+                pct_change_longs=pct_change_longs,
+                pct_change_shorts=pct_change_shorts,
+                LOOKBACK_BARS=LOOKBACK_BARS,
+                TIMEFRAME=TIMEFRAME,
+                market_data=market_data_str
             )
             
             print(f"\n🤖 Analyzing liquidation spike with AI...")
@@ -253,11 +320,7 @@ class LiquidationAgent(BaseAgent):
                 return None
                 
             # Extract the actual text from the TextBlock
-            content = message.content
-            if isinstance(content, list) and len(content) > 0:
-                content = content[0].text if hasattr(content[0], 'text') else str(content[0])
-            else:
-                content = str(content)
+            content = str(message.content)
             
             # Now split into lines
             lines = [line.strip() for line in content.split('\n') if line.strip()]
@@ -290,7 +353,9 @@ class LiquidationAgent(BaseAgent):
                 'action': action,
                 'analysis': analysis,
                 'confidence': confidence,
-                'pct_change': pct_change
+                'pct_change': total_pct_change,
+                'pct_change_longs': pct_change_longs,
+                'pct_change_shorts': pct_change_shorts
             }
             
         except Exception as e:
@@ -302,11 +367,19 @@ class LiquidationAgent(BaseAgent):
         """Format liquidation analysis into a speech-friendly message"""
         try:
             if analysis:
+                # Determine which liquidation type was more significant
+                if abs(analysis['pct_change_longs']) > abs(analysis['pct_change_shorts']):
+                    liq_type = "LONG"
+                    pct_change = analysis['pct_change_longs']
+                else:
+                    liq_type = "SHORT"
+                    pct_change = analysis['pct_change_shorts']
+                
                 message = (
                     f"ayo moon dev seven seven seven! "
-                    f"Liquidations up {analysis['pct_change']:.1f}%! "
-                    f"AI suggests {analysis['action']} with {analysis['confidence']}% confidence. "
-                    f"Analysis: {analysis['analysis'].split()[0]} 🌙"
+                    f"Massive {liq_type} liquidations detected! "
+                    f"Up {pct_change:.1f}% in the last period! "
+                    f"AI suggests {analysis['action']} with {analysis['confidence']}% confidence 🌙"
                 )
                 return message
             return None
@@ -343,14 +416,16 @@ class LiquidationAgent(BaseAgent):
         except Exception as e:
             print(f"❌ Error in announcement: {str(e)}")
             
-    def _save_to_history(self, total_size):
+    def _save_to_history(self, long_size, short_size):
         """Save current liquidation data to history"""
         try:
-            if total_size is not None:
+            if long_size is not None and short_size is not None:
                 # Create new row
                 new_row = pd.DataFrame([{
                     'timestamp': datetime.now(),
-                    'total_size': total_size
+                    'long_size': long_size,
+                    'short_size': short_size,
+                    'total_size': long_size + short_size
                 }])
                 
                 # Add to history
@@ -376,37 +451,45 @@ class LiquidationAgent(BaseAgent):
         """Run one monitoring cycle"""
         try:
             # Get current liquidation data
-            current_size = self._get_current_liquidations()
+            current_longs, current_shorts = self._get_current_liquidations()
             
-            if current_size is not None:
+            if current_longs is not None and current_shorts is not None:
                 # Get previous size
                 if not self.liquidation_history.empty:
-                    previous_size = self.liquidation_history['total_size'].iloc[-1]
+                    previous_record = self.liquidation_history.iloc[-1]
                     
-                    # Check if we have a significant increase
-                    if current_size > (previous_size * LIQUIDATION_THRESHOLD):
-                        # Get AI analysis
-                        analysis = self._analyze_opportunity(current_size, previous_size)
-                        
-                        if analysis:
-                            # Format and announce
-                            message = self._format_announcement(analysis)
-                            if message:
-                                self._announce(message)
-                                
-                                # Print detailed analysis
-                                print("\n" + "╔" + "═" * 50 + "╗")
-                                print("║        🌙 Moon Dev's Liquidation Analysis 💦       ║")
-                                print("╠" + "═" * 50 + "╣")
-                                print(f"║  Action: {analysis['action']:<41} ║")
-                                print(f"║  Confidence: {analysis['confidence']}%{' '*36} ║")
-                                analysis_lines = analysis['analysis'].split('\n')
-                                for line in analysis_lines:
-                                    print(f"║  {line:<47} ║")
-                                print("╚" + "═" * 50 + "╝")
+                    # Handle missing columns gracefully
+                    previous_longs = previous_record.get('long_size', 0)
+                    previous_shorts = previous_record.get('short_size', 0)
+                    
+                    # Only trigger if we have valid previous data
+                    if previous_longs > 0 and previous_shorts > 0:
+                        # Check if we have a significant increase in either longs or shorts
+                        if (current_longs > (previous_longs * LIQUIDATION_THRESHOLD) or 
+                            current_shorts > (previous_shorts * LIQUIDATION_THRESHOLD)):
+                            # Get AI analysis
+                            analysis = self._analyze_opportunity(current_longs, current_shorts, 
+                                                              previous_longs, previous_shorts)
+                            
+                            if analysis:
+                                # Format and announce
+                                message = self._format_announcement(analysis)
+                                if message:
+                                    self._announce(message)
+                                    
+                                    # Print detailed analysis
+                                    print("\n" + "╔" + "═" * 50 + "╗")
+                                    print("║        🌙 Moon Dev's Liquidation Analysis 💦       ║")
+                                    print("╠" + "═" * 50 + "╣")
+                                    print(f"║  Action: {analysis['action']:<41} ║")
+                                    print(f"║  Confidence: {analysis['confidence']}%{' '*36} ║")
+                                    analysis_lines = analysis['analysis'].split('\n')
+                                    for line in analysis_lines:
+                                        print(f"║  {line:<47} ║")
+                                    print("╚" + "═" * 50 + "╝")
                 
                 # Save to history
-                self._save_to_history(current_size)
+                self._save_to_history(current_longs, current_shorts)
                 
         except Exception as e:
             print(f"❌ Error in monitoring cycle: {str(e)}")
