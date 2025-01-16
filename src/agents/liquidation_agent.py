@@ -28,7 +28,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # Configuration
 CHECK_INTERVAL_MINUTES = 5  # How often to check liquidations
 LIQUIDATION_ROWS = 10000   # Number of rows to fetch each time
-LIQUIDATION_THRESHOLD = 1.5  # Multiplier for average liquidation to detect significant events
+LIQUIDATION_THRESHOLD = .5  # Multiplier for average liquidation to detect significant events
 
 # OHLCV Data Settings
 TIMEFRAME = '15m'  # Candlestick timeframe
@@ -319,10 +319,19 @@ class LiquidationAgent(BaseAgent):
                 print("❌ No response from AI")
                 return None
                 
-            # Extract the actual text from the TextBlock
+            # Convert content to string and clean it up
             content = str(message.content)
             
-            # Now split into lines
+            # Clean up any TextBlock formatting and brackets
+            content = content.replace('[', '').replace(']', '')
+            content = content.replace('TEXTBLOCK(TEXT=', '')
+            content = content.replace('TYPE=TEXT)', '')
+            content = content.replace('\\N', '\n')
+            content = content.replace('\\n', '\n')
+            content = content.replace("'", "")
+            content = content.strip()
+            
+            # Now split into lines and clean them
             lines = [line.strip() for line in content.split('\n') if line.strip()]
             
             if not lines:
@@ -336,7 +345,7 @@ class LiquidationAgent(BaseAgent):
                 return None
                 
             # Rest is analysis
-            analysis = lines[1] if len(lines) > 1 else ""  # Just take the second line for analysis
+            analysis = lines[1] if len(lines) > 1 else ""
             
             # Extract confidence from third line
             confidence = 50  # Default confidence
