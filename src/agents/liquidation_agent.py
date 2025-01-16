@@ -26,7 +26,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
-CHECK_INTERVAL_MINUTES = 5  # How often to check liquidations
+CHECK_INTERVAL_MINUTES = 10  # How often to check liquidations
 LIQUIDATION_ROWS = 10000   # Number of rows to fetch each time
 LIQUIDATION_THRESHOLD = .5  # Multiplier for average liquidation to detect significant events
 
