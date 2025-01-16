@@ -76,6 +76,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - Listing Arbitrage Agent (`listingarb_agent.py`): identifies promising Solana tokens on CoinGecko before they reach major exchanges like Binance and Coinbase, using parallel AI analysis for technical and fundamental insights
 - Focus Agent (`focus_agent.py`): randomly samples audio during coding sessions to maintain productivity, providing focus scores and voice alerts when focus drops (~$10/month, perfect for voice-to-code workflows)
 - Funding Agent (`funding_agent.py`): monitors funding rates across exchanges and uses AI to analyze opportunities, providing voice alerts for extreme funding situations with technical context 🌙
+- Liquidation Agent (`liquidation_agent.py`): tracks liquidation events with configurable time windows (15min/1hr/4hr), providing AI analysis and voice alerts for significant liquidation spikes 💦
 
 ## 🚀 Project Progress & Roadmap
 ### Phase 1: Foundation & Basic Trading ✅
@@ -99,6 +100,10 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 1/16 - Built Luna the Liquidation Agent with configurable time windows (15min/1hr/4hr)
+            - Updated Whale Agent to use new OI data format
+            - Fixed Funding Agent to handle new API structure
+            - All agents now using consistent Moon Dev API v2
 - [x] 1/15 - Released comprehensive API access with detailed documentation
             - Historical liquidation data endpoints
             - Real-time funding rate monitoring
@@ -130,6 +135,22 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - [x] 1/3 - risk_agent.py: built out an ai agent to manage risk
 - [x] 1/2 - trading_agent.py: built the first trading agent 
 - [x] 1/1 - first lines of code written
+
+## 🚢 Shipped Features
+
+### January 16, 2024
+- 🌊 Built Luna the Liquidation Agent with configurable time windows (15min/1hr/4hr)
+- 🐋 Updated Whale Agent to use new OI data format
+- 💰 Fixed Funding Agent to handle new API structure
+- 🎯 All agents now using consistent Moon Dev API v2
+
+### January 15, 2024
+- 🔑 Released comprehensive API access for Quantalete members
+- 📊 Historical liquidation data endpoints
+- 📈 Real-time funding rate monitoring
+- 🚀 New Solana token launch tracking
+- 📉 Detailed and combined ETH/BTC open interest data
+- 🤖 CopyBot data access for reference
 
 ## 🚀 Quick Start Guide
 
