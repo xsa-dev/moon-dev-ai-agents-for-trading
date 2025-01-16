@@ -319,23 +319,18 @@ class LiquidationAgent(BaseAgent):
                 print("❌ No response from AI")
                 return None
                 
-            # Convert content to string and clean it up
-            content = str(message.content)
-            
-            # Extract actual text from TextBlock if present
-            if "TEXTBLOCK(TEXT=" in content:
-                content = content.split("TEXTBLOCK(TEXT=")[1].split(",")[0]
-            
-            # Clean up any remaining formatting
-            content = content.replace('[', '').replace(']', '')
-            content = content.replace('\\N', '\n')
-            content = content.replace('\\n', '\n')
-            content = content.replace("'", "")
-            content = content.strip()
-            
-            # Now split into lines and clean them
-            lines = [line.strip() for line in content.split('\n') if line.strip()]
-            
+            # Handle TextBlock response
+            response = message.content
+            if isinstance(response, list):
+                # If it's a list of TextBlocks, get the text from the first one
+                if len(response) > 0 and hasattr(response[0], 'text'):
+                    response = response[0].text
+                else:
+                    print("❌ Invalid response format from AI")
+                    return None
+                    
+            # Parse response - handle both newline and period-based splits
+            lines = [line.strip() for line in response.split('\n') if line.strip()]
             if not lines:
                 print("❌ Empty response from AI")
                 return None
