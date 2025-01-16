@@ -209,28 +209,13 @@ class FundingAgent(BaseAgent):
         try:
             opportunities = {}
             
-            print("\n🔍 Checking funding rates:")
             for _, row in current_data.iterrows():
                 try:
-                    # Debug print raw values before conversion
-                    print(f"\n🔬 Processing {row['symbol']}:")
-                    print(f"   Raw annual_rate: {row['annual_rate']} (type: {type(row['annual_rate'])})")
-                    print(f"   Raw funding_rate: {row['funding_rate']} (type: {type(row['funding_rate'])})")
-                    
-                    # Convert to float and handle any string/NaN values
                     annual_rate = float(row['annual_rate'])
                     symbol = str(row['symbol'])
                     
-                    print(f"   Converted annual_rate: {annual_rate} (type: {type(annual_rate)})")
-                    print(f"🔎 {symbol}: Annual Rate = {annual_rate:.2f}%")
-                    print(f"   Thresholds: < {NEGATIVE_THRESHOLD}% or > {POSITIVE_THRESHOLD}%")
-                    
                     if annual_rate < NEGATIVE_THRESHOLD or annual_rate > POSITIVE_THRESHOLD:
-                        print(f"\n🎯 Found significant rate for {symbol}!")
-                        print(f"   Annual Rate: {annual_rate:.2f}%")
-                        
-                        # Get OHLCV data
-                        print(f"\n📊 Fetching OHLCV data for {symbol}...")
+                        # Get OHLCV data silently
                         market_data = hl.get_data(
                             symbol=symbol,
                             timeframe=TIMEFRAME,
@@ -238,50 +223,29 @@ class FundingAgent(BaseAgent):
                             add_indicators=True
                         )
                         
-                        if market_data.empty:
-                            print(f"⚠️ No market data available for {symbol}")
-                            continue
+                        if not market_data.empty:
+                            analysis = self._analyze_opportunity(
+                                symbol=symbol,
+                                funding_data=row.to_frame().T,
+                                market_data=market_data
+                            )
                             
-                        # Debug print market data types
-                        print("\n📈 Market Data Types:")
-                        print(market_data.dtypes)
-                        
-                        # Get AI analysis
-                        analysis = self._analyze_opportunity(
-                            symbol=symbol,
-                            funding_data=row.to_frame().T,
-                            market_data=market_data
-                        )
-                        
-                        if analysis:
-                            opportunities[symbol] = {
-                                'annual_rate': annual_rate,
-                                'action': analysis['action'],
-                                'analysis': analysis['analysis'],
-                                'confidence': analysis['confidence']
-                            }
-                            print(f"✅ Added opportunity for {symbol}")
-                        else:
-                            print(f"⚠️ No analysis generated for {symbol}")
+                            if analysis:
+                                opportunities[symbol] = {
+                                    'annual_rate': annual_rate,
+                                    'action': analysis['action'],
+                                    'analysis': analysis['analysis'],
+                                    'confidence': analysis['confidence']
+                                }
                             
-                except ValueError as ve:
-                    print(f"⚠️ Error processing {row['symbol']}: {ve}")
-                    print(f"   Raw annual_rate value: {row['annual_rate']}")
-                    print(f"   Raw funding_rate value: {row['funding_rate']}")
-                    continue
                 except Exception as e:
-                    print(f"⚠️ Unexpected error processing {row['symbol']}: {e}")
-                    print(f"   Full row data: {row.to_dict()}")
-                    traceback.print_exc()
                     continue
             
             return opportunities if opportunities else None
             
         except Exception as e:
-            print(f"❌ Error detecting changes: {str(e)}")
-            traceback.print_exc()
             return None
-            
+
     def _format_announcement(self, opportunities):
         """Format funding rate changes and analysis into a speech-friendly message"""
         try:
@@ -365,40 +329,46 @@ class FundingAgent(BaseAgent):
         """Get current funding rate data"""
         try:
             print("\n🔍 Fetching fresh funding rate data...")
-            df = self.api.get_funding_rates()
+            df = self.api.get_funding_data()
             
             if df is not None and not df.empty:
-                # Debug raw data
-                print("\n🔬 Raw funding data for BNB:")
-                if 'BNB' in df['symbol'].values:
-                    bnb_data = df[df['symbol'] == 'BNB']
-                    print(f"   Raw values: {bnb_data[['funding_rate', 'annual_rate']].to_dict('records')}")
-                
                 # Get latest data for each symbol
-                current_data = df.sort_values('timestamp').groupby('symbol').last().reset_index()
+                current_data = df.sort_values('event_time').groupby('symbol').last().reset_index()
                 
-                # Debug after groupby
-                print("\n🔬 After groupby for BNB:")
-                if 'BNB' in current_data['symbol'].values:
-                    bnb_data = current_data[current_data['symbol'] == 'BNB']
-                    print(f"   Values: {bnb_data[['funding_rate', 'annual_rate']].to_dict('records')}")
-                
-                # Ensure numeric columns are float
-                numeric_cols = ['funding_rate', 'annual_rate']
+                # Ensure funding_rate and yearly_funding_rate are numeric
+                numeric_cols = ['funding_rate', 'yearly_funding_rate']
                 for col in numeric_cols:
                     current_data[col] = pd.to_numeric(current_data[col], errors='coerce')
-                    
-                # Debug after numeric conversion
-                print("\n🔬 After numeric conversion for BNB:")
-                if 'BNB' in current_data['symbol'].values:
-                    bnb_data = current_data[current_data['symbol'] == 'BNB']
-                    print(f"   Values: {bnb_data[['funding_rate', 'annual_rate']].to_dict('records')}")
                 
-                print("\n📊 Current Funding Rates:")
-                print("   Symbol | Funding Rate | Annual Rate")
-                print("   " + "-"*40)
+                # Rename yearly_funding_rate to annual_rate for consistency
+                current_data = current_data.rename(columns={'yearly_funding_rate': 'annual_rate'})
+                
+                # Print fun box with rates
+                print("\n" + "╔" + "═" * 35 + "╗")
+                print("║     🌙 Moon Dev's Funding Party 🎉     ║")
+                print("╠" + "═" * 35 + "╣")
+                print("║ Symbol │ Yearly Rate │  Status  ║")
+                print("╟" + "─" * 35 + "╢")
+                
                 for _, row in current_data.iterrows():
-                    print(f"   {row['symbol']:<7} | {row['funding_rate']:.6f}% | {row['annual_rate']:.2f}%")
+                    # Get fun status emoji based on rate
+                    if row['annual_rate'] > 20:
+                        status = "🔥 HOT!"
+                    elif row['annual_rate'] < -5:
+                        status = "❄️ COLD"
+                    elif row['annual_rate'] > 10:
+                        status = "📈 NICE"
+                    elif row['annual_rate'] < 0:
+                        status = "📉 MEH"
+                    else:
+                        status = "😴 CHILL"
+                        
+                    # Truncate symbol to 4 characters
+                    symbol = row['symbol'][:4]
+                    print(f"║ {symbol:<4} │ {row['annual_rate']:>8.2f}% │ {status:<7} ║")
+                
+                print("╚" + "═" * 35 + "╝")
+                print(f"\n🎯 Moon Dev is watching for rates below {NEGATIVE_THRESHOLD}% or above {POSITIVE_THRESHOLD}%")
                 
                 return current_data
             return None
@@ -409,12 +379,12 @@ class FundingAgent(BaseAgent):
             return None
 
     def _save_to_history(self, current_data):
-        """Save current funding data to history in wide format (all symbols in one row)"""
+        """Save current funding data to history"""
         try:
             if current_data is not None and not current_data.empty:
                 # Convert to wide format with all symbols in one row
                 wide_data = pd.DataFrame()
-                wide_data['timestamp'] = [current_data['timestamp'].iloc[0]]  # Use first timestamp
+                wide_data['event_time'] = [current_data['event_time'].iloc[0]]  # Use first event_time
                 
                 # Add columns for each symbol's funding and annual rates
                 for _, row in current_data.iterrows():
@@ -428,32 +398,26 @@ class FundingAgent(BaseAgent):
                 else:
                     self.funding_history = pd.concat([self.funding_history, wide_data], ignore_index=True)
                 
-                # Drop duplicates based on timestamp
+                # Drop duplicates based on event_time
                 self.funding_history = self.funding_history.drop_duplicates(
-                    subset=['timestamp'], 
+                    subset=['event_time'], 
                     keep='last'
                 )
                 
                 # Keep only last 24 hours of data
                 cutoff_time = datetime.now() - timedelta(hours=24)
                 self.funding_history = self.funding_history[
-                    pd.to_datetime(self.funding_history['timestamp']) > cutoff_time
+                    pd.to_datetime(self.funding_history['event_time']) > cutoff_time
                 ]
                 
-                # Sort by timestamp
-                self.funding_history = self.funding_history.sort_values('timestamp')
+                # Sort by event_time
+                self.funding_history = self.funding_history.sort_values('event_time')
                 
                 # Save to file
                 self.funding_history.to_csv(self.history_file, index=False)
-                print("✅ History saved successfully")
                 
         except Exception as e:
             print(f"❌ Error saving to history: {str(e)}")
-            print("Debug info:")
-            print(f"Current data shape: {current_data.shape}")
-            print(f"Current data columns: {current_data.columns.tolist()}")
-            print(f"History shape: {self.funding_history.shape}")
-            print(f"History columns: {self.funding_history.columns.tolist()}")
             traceback.print_exc()
 
     def run_monitoring_cycle(self):
@@ -463,7 +427,7 @@ class FundingAgent(BaseAgent):
             current_data = self._get_current_funding()
             
             if current_data is not None:
-                # Save to history
+                # Save to history silently
                 self._save_to_history(current_data)
                 
                 # Check for significant changes
@@ -475,20 +439,19 @@ class FundingAgent(BaseAgent):
                     if message:
                         self._announce(message)
                         
-                        # Print detailed analysis
-                        print("\n📝 Detailed Analysis:")
+                        # Print detailed analysis in the same box style
+                        print("\n" + "╔" + "═" * 50 + "╗")
+                        print("║          🌙 Moon Dev's Trading Signals 🎯          ║")
+                        print("╠" + "═" * 50 + "╣")
                         for symbol, data in opportunities.items():
-                            print(f"\n🎯 {symbol} Analysis:")
-                            print(f"Action: {data['action']}")
-                            print(f"Confidence: {data['confidence']}%")
-                            print("Analysis:")
-                            print(data['analysis'])
-                else:
-                    print("\n😴 No significant funding rate changes detected")
+                            print(f"║  {symbol:<6} │ {data['action']:<6} │ {data['confidence']}% confident  ║")
+                            analysis_lines = data['analysis'].split('\n')
+                            for line in analysis_lines:
+                                print(f"║  {line:<47} ║")
+                        print("╚" + "═" * 50 + "╝")
                     
         except Exception as e:
             print(f"❌ Error in monitoring cycle: {str(e)}")
-            traceback.print_exc()
 
     def run(self):
         """Run the funding rate monitor continuously"""
@@ -496,10 +459,7 @@ class FundingAgent(BaseAgent):
         
         while True:
             try:
-                print(f"\n🌙 Moon Dev's Funding Agent starting monitoring cycle...")
                 self.run_monitoring_cycle()
-                
-                # Sleep until next check
                 print(f"\n💤 Sleeping for {CHECK_INTERVAL_MINUTES} minutes...")
                 time.sleep(CHECK_INTERVAL_MINUTES * 60)
                 
@@ -508,7 +468,6 @@ class FundingAgent(BaseAgent):
                 break
             except Exception as e:
                 print(f"❌ Error in main loop: {str(e)}")
-                traceback.print_exc()
                 time.sleep(60)  # Sleep for a minute before retrying
 
 if __name__ == "__main__":

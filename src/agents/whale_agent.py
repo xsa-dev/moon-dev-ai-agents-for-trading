@@ -203,33 +203,17 @@ class WhaleAgent(BaseAgent):
         return f"{millions:.2f} million"
 
     def _get_current_oi(self):
-        """Get current open interest data"""
+        """Get current open interest data from API"""
         try:
             print("\n🔍 Fetching fresh OI data from API...")
-            df = self.api.get_open_interest()
-            print(f"📊 Raw OI data shape: {df.shape if df is not None else 'No data received'}")
+            df = self.api.get_oi_data()  # Changed from get_open_interest to get_oi_data
             
-            if df is not None and not df.empty:
-                # Get the latest data point
-                latest_data = df.iloc[-1]  # Get most recent row
+            if df is None:
+                print("❌ Failed to get current OI data")
+                return None
                 
-                # Extract values directly from our format
-                btc_oi = latest_data['btc_oi']
-                eth_oi = latest_data['eth_oi']
-                total_oi = latest_data['total_oi']
-                
-                print(f"\n📈 Market OI Breakdown (Fresh from API):")
-                print(f"BTC: ${btc_oi:,.2f}")
-                print(f"ETH: ${eth_oi:,.2f}")
-                print(f"Total: ${total_oi:,.2f}")
-                
-                timestamp = datetime.now()
-                print(f"\n💾 Saving data point at {timestamp}")
-                self._save_oi_data(timestamp, btc_oi, eth_oi, total_oi)
-                return total_oi
-                
-            print("❌ No data received from API")
-            return None
+            print(f"✨ Successfully fetched {len(df)} OI records")
+            return df
             
         except Exception as e:
             print(f"❌ Error getting OI data: {str(e)}")
