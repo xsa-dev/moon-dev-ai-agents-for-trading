@@ -21,12 +21,13 @@ from collections import deque
 from src.agents.base_agent import BaseAgent
 import traceback
 import numpy as np
+import re
 
 # Get the project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
-CHECK_INTERVAL_MINUTES = 5  # How often to check funding rates
+CHECK_INTERVAL_MINUTES = 10  # How often to check funding rates
 NEGATIVE_THRESHOLD = -5 # AI Run & Alert if annual rate below -1%
 POSITIVE_THRESHOLD = 20  # AI Run & Alert if annual rate above 20%
 
@@ -51,7 +52,7 @@ from src import config
 # Only set these if you want to override config.py settings
 AI_MODEL = False  # Set to model name to override config.AI_MODEL
 AI_TEMPERATURE = 0  # Set > 0 to override config.AI_TEMPERATURE
-AI_MAX_TOKENS = 50  # Set > 0 to override config.AI_MAX_TOKENS
+AI_MAX_TOKENS = 25  # Set > 0 to override config.AI_MAX_TOKENS
 
 # Voice settings
 VOICE_MODEL = "tts-1"
@@ -128,12 +129,37 @@ class FundingAgent(BaseAgent):
     def _analyze_opportunity(self, symbol, funding_data, market_data):
         """Get AI analysis of the opportunity"""
         try:
+            # Get BTC market data as market barometer
+            btc_data = hl.get_data(
+                symbol="BTC",
+                timeframe=TIMEFRAME,
+                bars=LOOKBACK_BARS,
+                add_indicators=True
+            )
+            
+            # Get symbol specific data if not BTC
+            symbol_data = None
+            if symbol != "BTC":
+                symbol_data = hl.get_data(
+                    symbol=symbol,
+                    timeframe=TIMEFRAME,
+                    bars=LOOKBACK_BARS,
+                    add_indicators=True
+                )
+            
+            # Format market data context
+            market_context = f"BTC Market Data (Last 5 candles):\n{btc_data.tail(5).to_string()}\n\n"
+            if symbol_data is not None:
+                market_context += f"{symbol} Market Data (Last 5 candles):\n{symbol_data.tail(5).to_string()}"
+            else:
+                market_context = f"BTC Market Data (Last 5 candles):\n{btc_data.tail(5).to_string()}"
+            
             # Prepare the context
             rate = funding_data['annual_rate'].iloc[0]
             context = FUNDING_ANALYSIS_PROMPT.format(
                 symbol=symbol,
                 rate=f"{rate:.2f}",
-                market_data=market_data.tail(5).to_string(),  # Last 5 candles for brevity
+                market_data=market_context,
                 funding_data=funding_data.to_string()
             )
             
@@ -150,48 +176,53 @@ class FundingAgent(BaseAgent):
                 }]
             )
             
-            # The response is in message.content
             if not message or not message.content:
                 print("❌ No response from AI")
                 return None
                 
-            # Handle TextBlock response
-            response = message.content
-            if isinstance(response, list):
-                # If it's a list of TextBlocks, get the text from the first one
-                if len(response) > 0 and hasattr(response[0], 'text'):
-                    response = response[0].text
-                else:
-                    print("❌ Invalid response format from AI")
-                    return None
+            # Debug: Print raw response
+            print("\n🔍 Raw response:")
+            print(repr(message.content))
             
-            # Parse response - handle both newline and period-based splits
-            lines = [line.strip() for line in response.split('\n') if line.strip()]
+            # Get the raw content and convert to string
+            content = str(message.content)
+            
+            # Clean up TextBlock formatting - new format handling
+            if 'TextBlock' in content:
+                # Extract just the text content between quotes
+                match = re.search(r"text='([^']*)'", content, re.IGNORECASE)
+                if match:
+                    content = match.group(1)
+            
+            # Clean up any remaining formatting
+            content = content.replace('\\n', '\n')
+            content = content.strip('[]')
+            
+            # Split into lines and clean each line
+            lines = [line.strip() for line in content.split('\n') if line.strip()]
+            
             if not lines:
                 print("❌ Empty response from AI")
                 return None
-                
+            
             # First line should be the action
             action = lines[0].strip().upper()
             if action not in ['BUY', 'SELL', 'NOTHING']:
                 print(f"⚠️ Invalid action: {action}")
                 return None
-                
-            # Rest is analysis
-            analysis = '\n'.join(lines[1:]) if len(lines) > 1 else ""
             
-            # Extract confidence - look for percentage in the analysis
+            # Rest is analysis
+            analysis = lines[1] if len(lines) > 1 else ""
+            
+            # Extract confidence from third line
             confidence = 50  # Default confidence
-            for line in lines:
-                if 'confidence' in line.lower():
-                    try:
-                        # Find any number followed by %
-                        import re
-                        matches = re.findall(r'(\d+)%', line)
-                        if matches:
-                            confidence = int(matches[0])
-                    except:
-                        print("⚠️ Could not parse confidence, using default")
+            if len(lines) > 2:
+                try:
+                    matches = re.findall(r'(\d+)%', lines[2])
+                    if matches:
+                        confidence = int(matches[0])
+                except:
+                    print("⚠️ Could not parse confidence, using default")
             
             return {
                 'action': action,
@@ -328,7 +359,6 @@ class FundingAgent(BaseAgent):
     def _get_current_funding(self):
         """Get current funding rate data"""
         try:
-            print("\n🔍 Fetching fresh funding rate data...")
             df = self.api.get_funding_data()
             
             if df is not None and not df.empty:
@@ -342,33 +372,6 @@ class FundingAgent(BaseAgent):
                 
                 # Rename yearly_funding_rate to annual_rate for consistency
                 current_data = current_data.rename(columns={'yearly_funding_rate': 'annual_rate'})
-                
-                # Print fun box with rates
-                print("\n" + "╔" + "═" * 35 + "╗")
-                print("║     🌙 Moon Dev's Funding Party 🎉     ║")
-                print("╠" + "═" * 35 + "╣")
-                print("║ Symbol │ Yearly Rate │  Status  ║")
-                print("╟" + "─" * 35 + "╢")
-                
-                for _, row in current_data.iterrows():
-                    # Get fun status emoji based on rate
-                    if row['annual_rate'] > 20:
-                        status = "🔥 HOT!"
-                    elif row['annual_rate'] < -5:
-                        status = "❄️ COLD"
-                    elif row['annual_rate'] > 10:
-                        status = "📈 NICE"
-                    elif row['annual_rate'] < 0:
-                        status = "📉 MEH"
-                    else:
-                        status = "😴 CHILL"
-                        
-                    # Truncate symbol to 4 characters
-                    symbol = row['symbol'][:4]
-                    print(f"║ {symbol:<4} │ {row['annual_rate']:>8.2f}% │ {status:<7} ║")
-                
-                print("╚" + "═" * 35 + "╝")
-                print(f"\n🎯 Moon Dev is watching for rates below {NEGATIVE_THRESHOLD}% or above {POSITIVE_THRESHOLD}%")
                 
                 return current_data
             return None
@@ -438,18 +441,33 @@ class FundingAgent(BaseAgent):
                     message = self._format_announcement(opportunities)
                     if message:
                         self._announce(message)
-                        
-                        # Print detailed analysis in the same box style
-                        print("\n" + "╔" + "═" * 50 + "╗")
-                        print("║          🌙 Moon Dev's Trading Signals 🎯          ║")
-                        print("╠" + "═" * 50 + "╣")
-                        for symbol, data in opportunities.items():
-                            print(f"║  {symbol:<6} │ {data['action']:<6} │ {data['confidence']}% confident  ║")
-                            analysis_lines = data['analysis'].split('\n')
-                            for line in analysis_lines:
-                                print(f"║  {line:<47} ║")
-                        print("╚" + "═" * 50 + "╝")
+            
+            # Always print the final box after any announcements
+            print("\n" + "╔" + "═" * 50 + "╗")
+            print("║         🌙 Moon Dev's Funding Party 🎉          ║")
+            print("╠" + "═" * 50 + "╣")
+            print("║  Symbol  │  Annual Rate  │      Status      ║")
+            print("╟" + "─" * 50 + "╢")
+            
+            for _, row in current_data.iterrows():
+                # Get fun status emoji based on rate
+                if row['annual_rate'] > 20:
+                    status = "🔥 SUPER HOT!"
+                elif row['annual_rate'] < -5:
+                    status = "❄️ SUPER COLD"
+                elif row['annual_rate'] > 10:
+                    status = "📈 HEATING UP"
+                elif row['annual_rate'] < 0:
+                    status = "📉 COOLING"
+                else:
+                    status = "😴 CHILL"
                     
+                # Truncate symbol to 4 characters
+                symbol = row['symbol'][:4]
+                print(f"║  {symbol:<4} │  {row['annual_rate']:>8.2f}%  │  {status:<13} ║")
+            
+            print("╚" + "═" * 50 + "╝")
+            
         except Exception as e:
             print(f"❌ Error in monitoring cycle: {str(e)}")
 
