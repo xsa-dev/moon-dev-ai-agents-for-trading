@@ -77,6 +77,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - Focus Agent (`focus_agent.py`): randomly samples audio during coding sessions to maintain productivity, providing focus scores and voice alerts when focus drops (~$10/month, perfect for voice-to-code workflows)
 - Funding Agent (`funding_agent.py`): monitors funding rates across exchanges and uses AI to analyze opportunities, providing voice alerts for extreme funding situations with technical context 🌙
 - Liquidation Agent (`liquidation_agent.py`): tracks liquidation events with configurable time windows (15min/1hr/4hr), providing AI analysis and voice alerts for significant liquidation spikes 💦
+- Chart Agent (`chartanalysis_agent.py`): looks at any crypto chart and then analyzes it with ai to make a buy/sell/nothing reccomendation.
 
 ## 🚀 Project Progress & Roadmap
 ### Phase 1: Foundation & Basic Trading ✅
@@ -100,6 +101,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 1/17 - built chuck the chart analysis agent that reads in any crypto chart and then analyzes it to get a buy/sell/nothing reccomendation.
 - [x] 1/16 - Built Luna the Liquidation Agent with configurable time windows (15min/1hr/4hr)
             - Updated Whale Agent to use new OI data format
             - Fixed Funding Agent to handle new API structure
