@@ -66,12 +66,18 @@ Line 2: One short reason why
 Line 3: Only write "Confidence: X%" where X is 0-100
 
 Analyze {symbol} with {rate}% funding rate:
+
+Below is Bitcoin (BTC) market data which shows overall market direction:
 {market_data}
+
+Above is Bitcoin's market data which indicates overall market direction.
+Below is the funding rate data for {symbol}:
 {funding_data}
 
-super negative funding rates in a trending market may be a good buy
-super high funding rates in a downtrend may be a good sell
-
+Remember:
+- Super negative funding rates in a trending up market may signal a good buy (shorts getting squeezed)
+- Super high funding rates in a downtrend may signal a good sell (longs getting liquidated)
+- Use BTC's trend to gauge overall market direction
 """
 
 class FundingAgent(BaseAgent):
@@ -129,6 +135,10 @@ class FundingAgent(BaseAgent):
     def _analyze_opportunity(self, symbol, funding_data, market_data):
         """Get AI analysis of the opportunity"""
         try:
+            # Debug print raw funding rate
+            rate = funding_data['annual_rate'].iloc[0]
+            print(f"\n🔍 Raw funding rate for {symbol}: {rate:.2f}%")
+            
             # Get BTC market data as market barometer
             btc_data = hl.get_data(
                 symbol="BTC",
@@ -149,10 +159,14 @@ class FundingAgent(BaseAgent):
             
             # Format market data context
             market_context = f"BTC Market Data (Last 5 candles):\n{btc_data.tail(5).to_string()}\n\n"
-            if symbol_data is not None:
-                market_context += f"{symbol} Market Data (Last 5 candles):\n{symbol_data.tail(5).to_string()}"
-            else:
-                market_context = f"BTC Market Data (Last 5 candles):\n{btc_data.tail(5).to_string()}"
+            if symbol_data is not None and symbol != "BTC":
+                market_context += f"{symbol} Technical Data (Last 5 candles):\n{symbol_data.tail(5).to_string()}\n\n"
+            
+            # Add some basic trend analysis
+            btc_close = btc_data['close'].iloc[-1]
+            btc_sma = btc_data['close'].rolling(20).mean().iloc[-1]
+            btc_trend = "UPTREND" if btc_close > btc_sma else "DOWNTREND"
+            market_context += f"\nBTC Trend Analysis:\n- Current Price vs 20 SMA: {btc_trend}\n"
             
             # Prepare the context
             rate = funding_data['annual_rate'].iloc[0]
@@ -304,7 +318,7 @@ class FundingAgent(BaseAgent):
                     )
                 
             if messages:
-                return "ayo moon dev 777! " + " | ".join(messages) + "!"
+                return "ayo moon dev seven seven seven! " + " | ".join(messages) + "!"
             return None
             
         except Exception as e:

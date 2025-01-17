@@ -100,7 +100,7 @@ class MoonDevAPI:
         if not self.api_key:
             print("⚠️ No API key found! Please set MOONDEV_API_KEY in your .env file")
         else:
-            print(f"🔑 Using API key: {self.api_key}")
+            print("🔑 API key loaded successfully!")
 
     def _fetch_csv(self, filename, limit=None):
         """Fetch CSV data from the API"""
