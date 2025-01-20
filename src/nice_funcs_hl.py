@@ -204,15 +204,176 @@ def get_data(symbol, timeframe='15m', bars=100, add_indicators=True):
 def get_market_info():
     """Get current market info for all coins on Hyperliquid"""
     try:
+        print("\n🔄 Sending request to Hyperliquid API...")
         response = requests.post(
             BASE_URL,
             headers={'Content-Type': 'application/json'},
             json={"type": "allMids"}
         )
         
+        print(f"📡 Response status code: {response.status_code}")
+        
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+            print(f"📦 Raw response data: {data}")
+            return data
+        print(f"❌ Bad status code: {response.status_code}")
+        print(f"📄 Response text: {response.text}")
         return None
     except Exception as e:
         print(f"❌ Error getting market info: {str(e)}")
-        return None 
+        traceback.print_exc()  # Print full error traceback
+        return None
+
+def test_market_info():
+    print("\n💹 Testing Market Info...")
+    try:
+        print("🎯 Fetching current market prices...")
+        info = get_market_info()
+        
+        print(f"\n📊 Response type: {type(info)}")
+        if info is not None:
+            print(f"📝 Response content: {info}")
+        
+        if info and isinstance(info, dict):
+            print("\n💰 Current Market Prices:")
+            print("=" * 50)
+            # Target symbols we're interested in
+            target_symbols = ["BTC", "ETH", "SOL", "ARB", "OP", "MATIC"]
+            
+            for symbol in target_symbols:
+                if symbol in info:
+                    try:
+                        price = float(info[symbol])
+                        print(f"Symbol: {symbol:8} | Price: ${price:,.2f}")
+                    except (ValueError, TypeError) as e:
+                        print(f"⚠️ Error processing price for {symbol}: {str(e)}")
+                else:
+                    print(f"⚠️ No price data for {symbol}")
+        else:
+            print("❌ No valid market info received")
+            if info is None:
+                print("📛 Response was None")
+            else:
+                print(f"❓ Unexpected response type: {type(info)}")
+    except Exception as e:
+        print(f"❌ Error in market info test: {str(e)}")
+        print(f"🔍 Full error traceback:")
+        traceback.print_exc()
+
+def get_funding_rates(symbol):
+    """
+    Get current funding rate for a specific coin on Hyperliquid
+    
+    Args:
+        symbol (str): Trading pair symbol (e.g., 'BTC', 'ETH', 'FART')
+        
+    Returns:
+        dict: Funding data including rate, mark price, and open interest
+    """
+    try:
+        print(f"\n🔄 Fetching funding rate for {symbol}...")
+        response = requests.post(
+            BASE_URL,
+            headers={'Content-Type': 'application/json'},
+            json={"type": "metaAndAssetCtxs"}
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if len(data) >= 2 and isinstance(data[0], dict) and isinstance(data[1], list):
+                # Get universe (symbols) from first element
+                universe = {coin['name']: i for i, coin in enumerate(data[0]['universe'])}
+                
+                # Check if symbol exists
+                if symbol not in universe:
+                    print(f"❌ Symbol {symbol} not found in Hyperliquid universe")
+                    print(f"📝 Available symbols: {', '.join(universe.keys())}")
+                    return None
+                
+                # Get funding data from second element
+                funding_data = data[1]
+                idx = universe[symbol]
+                
+                if idx < len(funding_data):
+                    asset_data = funding_data[idx]
+                    return {
+                        'funding_rate': float(asset_data['funding']),
+                        'mark_price': float(asset_data['markPx']),
+                        'open_interest': float(asset_data['openInterest'])
+                    }
+                    
+            print("❌ Unexpected response format")
+            return None
+        print(f"❌ Bad status code: {response.status_code}")
+        return None
+    except Exception as e:
+        print(f"❌ Error getting funding rate for {symbol}: {str(e)}")
+        traceback.print_exc()
+        return None
+
+def test_funding_rates():
+    print("\n💸 Testing Funding Rates...")
+    try:
+        # Test with some interesting symbols
+        test_symbols = ["BTC", "ETH", "FARTCOIN"]
+        
+        for symbol in test_symbols:
+            print(f"\n📊 Testing {symbol}:")
+            print("=" * 50)
+            data = get_funding_rates(symbol)
+            
+            if data:
+                # The API returns the 8-hour funding rate
+                # To get hourly rate: funding_rate
+                # To get annual rate: hourly * 24 * 365
+                hourly_rate = float(data['funding_rate']) * 100  # Convert to percentage
+                annual_rate = hourly_rate * 24 * 365  # Convert hourly to annual
+                
+                print(f"Symbol: {symbol:8} | Hourly: {hourly_rate:7.4f}% | Annual: {annual_rate:7.2f}% | OI: {data['open_interest']:10.2f}")
+            else:
+                print(f"❌ No funding data received for {symbol}")
+                
+    except Exception as e:
+        print(f"❌ Error in funding rates test: {str(e)}")
+        print(f"🔍 Full error traceback:")
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    print("\n🌙 Moon Dev's Hyperliquid Function Tester")
+    print("=" * 50)
+    
+    def test_btc_data():
+        print("\n🔍 Testing BTC Data Retrieval...")
+        try:
+            # Test with BTC on 15m timeframe
+            df = get_data("BTC", timeframe="15m", bars=100, add_indicators=True)
+            
+            if not df.empty:
+                print("\n📊 Last 5 candles:")
+                print("=" * 80)
+                for idx, row in df.tail().iterrows():
+                    print(f"Time: {row['timestamp'].strftime('%H:%M:%S')} | Open: ${row['open']:,.2f} | High: ${row['high']:,.2f} | Low: ${row['low']:,.2f} | Close: ${row['close']:,.2f} | Vol: ${row['volume']:,.2f}")
+                
+                print("\n📈 Technical Indicators (Last Candle):")
+                print("=" * 50)
+                last_row = df.iloc[-1]
+                print(f"SMA20: ${last_row['sma_20']:,.2f}")
+                print(f"SMA50: ${last_row['sma_50']:,.2f}")
+                print(f"RSI: {last_row['rsi']:.2f}")
+                print(f"MACD: {last_row['MACD_12_26_9']:,.2f}")
+                
+            else:
+                print("❌ No data received")
+                
+        except Exception as e:
+            print(f"❌ Error in BTC test: {str(e)}")
+    
+    # Run tests
+    print("\n🧪 Running function tests...")
+    
+    test_btc_data()
+    test_market_info()
+    test_funding_rates()  # Now tests individual symbols
+    
+    print("\n✨ Testing complete! Moon Dev out! 🌙") 
