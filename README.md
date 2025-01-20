@@ -140,22 +140,6 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - [x] 1/2 - trading_agent.py: built the first trading agent 
 - [x] 1/1 - first lines of code written
 
-## 🚢 Shipped Features
-
-### January 16, 2024
-- 🌊 Built Luna the Liquidation Agent with configurable time windows (15min/1hr/4hr)
-- 🐋 Updated Whale Agent to use new OI data format
-- 💰 Fixed Funding Agent to handle new API structure
-- 🎯 All agents now using consistent Moon Dev API v2
-
-### January 15, 2024
-- 🔑 Released comprehensive API access for Quantalete members
-- 📊 Historical liquidation data endpoints
-- 📈 Real-time funding rate monitoring
-- 🚀 New Solana token launch tracking
-- 📉 Detailed and combined ETH/BTC open interest data
-- 🤖 CopyBot data access for reference
-
 ## 🚀 Quick Start Guide
 
 1. ⭐ **Star the Repo**
