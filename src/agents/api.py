@@ -42,6 +42,8 @@ Available Methods:
 - get_copybot_follow_list(): Get Moon Dev's personal copy trading follow list (for reference only - DYOR!)
 - get_copybot_recent_transactions(): Get recent transactions from the followed wallets above
 
+
+
 Data Details:
 ------------
 - Liquidation Data: Historical liquidation events with timestamps and amounts
