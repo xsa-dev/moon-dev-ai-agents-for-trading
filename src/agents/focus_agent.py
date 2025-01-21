@@ -27,6 +27,14 @@ X/10
 "Quote OR motivational sentence"
 """
 
+# Model override settings
+# Set to "0" to use config.py's AI_MODEL setting
+# Available models:
+# - "deepseek-chat" (DeepSeek's V3 model - fast & efficient)
+# - "deepseek-reasoner" (DeepSeek's R1 reasoning model)
+# - "0" (Use config.py's AI_MODEL setting)
+MODEL_OVERRIDE = "deepseek-chat"  # Set to "0" to disable override
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"  # Base URL for DeepSeek API
 
 import os
 import time as time_lib
@@ -34,6 +42,7 @@ from datetime import datetime, timedelta, time
 from google.cloud import speech_v1p1beta1 as speech
 import pyaudio
 import openai
+from anthropic import Anthropic
 from termcolor import cprint
 from pathlib import Path
 from dotenv import load_dotenv
@@ -41,6 +50,7 @@ from random import randint, uniform
 import threading
 import pandas as pd
 import tempfile
+from src.config import *
 
 # Configuration
 MIN_INTERVAL_MINUTES = 4
@@ -69,11 +79,36 @@ class FocusAgent:
         """Initialize the Focus Agent"""
         load_dotenv()
         
-        # Initialize OpenAI
+        # Initialize OpenAI for voice and DeepSeek
         openai_key = os.getenv("OPENAI_KEY")
         if not openai_key:
             raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
         self.openai_client = openai.OpenAI(api_key=openai_key)
+        
+        # Initialize Anthropic for Claude models
+        anthropic_key = os.getenv("ANTHROPIC_KEY")
+        if not anthropic_key:
+            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
+        self.anthropic_client = Anthropic(api_key=anthropic_key)
+        
+        # Set active model - use override if set, otherwise use config
+        self.active_model = MODEL_OVERRIDE if MODEL_OVERRIDE != "0" else AI_MODEL
+        
+        # Initialize DeepSeek client if needed
+        if "deepseek" in self.active_model.lower():
+            deepseek_key = os.getenv("DEEPSEEK_KEY")
+            if deepseek_key:
+                self.deepseek_client = openai.OpenAI(
+                    api_key=deepseek_key,
+                    base_url=DEEPSEEK_BASE_URL
+                )
+                cprint("🚀 Moon Dev's Focus Agent using DeepSeek override!", "green")
+            else:
+                self.deepseek_client = None
+                cprint("⚠️ DEEPSEEK_KEY not found - DeepSeek model will not be available", "yellow")
+        else:
+            self.deepseek_client = None
+            cprint(f"🎯 Moon Dev's Focus Agent using Claude model: {self.active_model}!", "green")
         
         # Initialize Google Speech client
         google_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
@@ -201,16 +236,44 @@ class FocusAgent:
     def analyze_focus(self, transcript):
         """Analyze focus level from transcript"""
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": FOCUS_PROMPT},
-                    {"role": "user", "content": transcript}
-                ],
-                max_tokens=150
-            )
+            # Use either DeepSeek or Claude
+            if "deepseek" in self.active_model.lower():
+                if not self.deepseek_client:
+                    raise ValueError("🚨 DeepSeek client not initialized - check DEEPSEEK_KEY")
+                client = self.deepseek_client
+                model = "deepseek-chat"
+                cprint(f"🤖 Using DeepSeek model: {model}", "cyan")
+                
+                # Make DeepSeek API call
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": FOCUS_PROMPT},
+                        {"role": "user", "content": transcript}
+                    ],
+                    max_tokens=AI_MAX_TOKENS,
+                    temperature=AI_TEMPERATURE,
+                    stream=False
+                )
+                analysis = response.choices[0].message.content.strip()
+                
+            else:
+                # Use Claude with Anthropic client
+                cprint(f"🤖 Using Claude model: {self.active_model}", "cyan")
+                
+                # Make Anthropic API call
+                response = self.anthropic_client.messages.create(
+                    model=self.active_model,
+                    max_tokens=AI_MAX_TOKENS,
+                    temperature=AI_TEMPERATURE,
+                    system=FOCUS_PROMPT,
+                    messages=[
+                        {"role": "user", "content": transcript}
+                    ]
+                )
+                analysis = response.content[0].text
             
-            analysis = response.choices[0].message.content.strip()
+            cprint(f"\n📝 Raw model response:\n{analysis}", "magenta")
             
             # Split into score and message
             score_line, message = analysis.split('\n', 1)

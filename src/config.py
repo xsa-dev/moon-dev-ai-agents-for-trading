@@ -78,7 +78,10 @@ DATA_TIMEFRAME = '1H'  # 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 8H, 12H, 1D, 3D, 
 SAVE_OHLCV_DATA = False  # 🌙 Set to True to save data permanently, False will only use temp data during run
 
 # AI Model Settings 🤖
-AI_MODEL = "claude-3-haiku-20240307"  # Claude model to use: claude-3-haiku-20240307,claude-3-sonnet-20240229, claude-3-opus-20240229
+AI_MODEL = "claude-3-haiku-20240307"  # Model Options:
+                                     # - claude-3-haiku-20240307 (Fast, efficient Claude model)
+                                     # - claude-3-sonnet-20240229 (Balanced Claude model)
+                                     # - claude-3-opus-20240229 (Most powerful Claude model)
 AI_MAX_TOKENS = 1024  # Max tokens for response
 AI_TEMPERATURE = 0.7  # Creativity vs precision (0-1)
 
