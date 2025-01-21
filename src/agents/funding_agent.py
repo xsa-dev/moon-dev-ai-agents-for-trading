@@ -5,6 +5,15 @@ Built with love by Moon Dev 🚀
 Fran the Funding Agent tracks funding rate changes across different timeframes and announces significant changes via OpenAI TTS.
 """
 
+# Model override settings
+# Set to "0" to use config.py's AI_MODEL setting
+# Available models:
+# - "deepseek-chat" (DeepSeek's V3 model - fast & efficient)
+# - "deepseek-reasoner" (DeepSeek's R1 reasoning model)
+# - "0" (Use config.py's AI_MODEL setting)
+MODEL_OVERRIDE = "deepseek-chat"  # Set to "deepseek-chat" to use DeepSeek
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"  # Base URL for DeepSeek API
+
 import os
 import pandas as pd
 import time
@@ -27,7 +36,7 @@ import re
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Configuration
-CHECK_INTERVAL_MINUTES = 10  # How often to check funding rates
+CHECK_INTERVAL_MINUTES = 15  # How often to check funding rates
 NEGATIVE_THRESHOLD = -5 # AI Run & Alert if annual rate below -1%
 POSITIVE_THRESHOLD = 20  # AI Run & Alert if annual rate above 20%
 
@@ -37,11 +46,11 @@ LOOKBACK_BARS = 100  # Number of candles to analyze
 
 # Symbol to name mapping
 SYMBOL_NAMES = {
-    'BTC': 'Bitcoin',
-    'ETH': 'Ethereum',
-    'SOL': 'Solana',
-    'WIF': 'Wif',
-    'BNB': 'BNB',
+    # 'BTC': 'Bitcoin',
+    # 'ETH': 'Ethereum',
+    # 'SOL': 'Solana',
+    # 'WIF': 'Wif',
+    # 'BNB': 'BNB',
     'FARTCOIN': 'Fart Coin'
 }
 
@@ -87,34 +96,38 @@ class FundingAgent(BaseAgent):
         """Initialize Fran the Funding Agent"""
         super().__init__('funding')
         
-        # Set AI parameters - use config values unless overridden
-        self.ai_model = AI_MODEL if AI_MODEL else config.AI_MODEL
-        self.ai_temperature = AI_TEMPERATURE if AI_TEMPERATURE > 0 else config.AI_TEMPERATURE
-        self.ai_max_tokens = AI_MAX_TOKENS if AI_MAX_TOKENS > 0 else config.AI_MAX_TOKENS
+        # Set active model - use override if set, otherwise use config
+        self.active_model = MODEL_OVERRIDE if MODEL_OVERRIDE != "0" else config.AI_MODEL
         
-        print(f"🤖 Using AI Model: {self.ai_model}")
-        if AI_MODEL or AI_TEMPERATURE > 0 or AI_MAX_TOKENS > 0:
-            print("⚠️ Note: Using some override settings instead of config.py defaults")
-            if AI_MODEL:
-                print(f"  - Model: {AI_MODEL}")
-            if AI_TEMPERATURE > 0:
-                print(f"  - Temperature: {AI_TEMPERATURE}")
-            if AI_MAX_TOKENS > 0:
-                print(f"  - Max Tokens: {AI_MAX_TOKENS}")
-                
         load_dotenv()
         
-        # Get API keys
+        # Initialize OpenAI client for voice only
         openai_key = os.getenv("OPENAI_KEY")
-        anthropic_key = os.getenv("ANTHROPIC_KEY")
-        
         if not openai_key:
             raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
+        openai.api_key = openai_key
+        
+        # Initialize Anthropic for Claude models
+        anthropic_key = os.getenv("ANTHROPIC_KEY")
         if not anthropic_key:
             raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
-            
-        openai.api_key = openai_key
-        self.client = anthropic.Anthropic(api_key=anthropic_key)
+        self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+        
+        # Initialize DeepSeek client if needed
+        if "deepseek" in self.active_model.lower():
+            deepseek_key = os.getenv("DEEPSEEK_KEY")
+            if deepseek_key:
+                self.deepseek_client = openai.OpenAI(
+                    api_key=deepseek_key,
+                    base_url=DEEPSEEK_BASE_URL
+                )
+                cprint("🚀 Moon Dev's Funding Agent using DeepSeek override!", "green")
+            else:
+                self.deepseek_client = None
+                cprint("⚠️ DEEPSEEK_KEY not found - DeepSeek model will not be available", "yellow")
+        else:
+            self.deepseek_client = None
+            cprint(f"🎯 Moon Dev's Funding Agent using Claude model: {self.active_model}!", "green")
         
         self.api = MoonDevAPI()
         
@@ -179,34 +192,39 @@ class FundingAgent(BaseAgent):
             
             print(f"\n🤖 Analyzing {symbol} with AI...")
             
-            # Get AI analysis using instance settings
-            message = self.client.messages.create(
-                model=self.ai_model,
-                max_tokens=self.ai_max_tokens,
-                temperature=self.ai_temperature,
-                messages=[{
-                    "role": "user",
-                    "content": context
-                }]
-            )
+            # Use either DeepSeek or Claude based on active_model
+            if "deepseek" in self.active_model.lower():
+                if not self.deepseek_client:
+                    raise ValueError("🚨 DeepSeek client not initialized - check DEEPSEEK_KEY")
+                    
+                cprint(f"🤖 Using DeepSeek model: {self.active_model}", "cyan")
+                response = self.deepseek_client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=[
+                        {"role": "system", "content": FUNDING_ANALYSIS_PROMPT},
+                        {"role": "user", "content": context}
+                    ],
+                    max_tokens=AI_MAX_TOKENS if AI_MAX_TOKENS > 0 else config.AI_MAX_TOKENS,
+                    temperature=AI_TEMPERATURE if AI_TEMPERATURE > 0 else config.AI_TEMPERATURE,
+                    stream=False
+                )
+                content = response.choices[0].message.content.strip()
+            else:
+                cprint(f"🤖 Using Claude model: {self.active_model}", "cyan")
+                response = self.anthropic_client.messages.create(
+                    model=self.active_model,
+                    max_tokens=AI_MAX_TOKENS if AI_MAX_TOKENS > 0 else config.AI_MAX_TOKENS,
+                    temperature=AI_TEMPERATURE if AI_TEMPERATURE > 0 else config.AI_TEMPERATURE,
+                    system=FUNDING_ANALYSIS_PROMPT,
+                    messages=[
+                        {"role": "user", "content": context}
+                    ]
+                )
+                content = response.content[0].text
             
-            if not message or not message.content:
-                print("❌ No response from AI")
-                return None
-                
             # Debug: Print raw response
             print("\n🔍 Raw response:")
-            print(repr(message.content))
-            
-            # Get the raw content and convert to string
-            content = str(message.content)
-            
-            # Clean up TextBlock formatting - new format handling
-            if 'TextBlock' in content:
-                # Extract just the text content between quotes
-                match = re.search(r"text='([^']*)'", content, re.IGNORECASE)
-                if match:
-                    content = match.group(1)
+            print(repr(content))
             
             # Clean up any remaining formatting
             content = content.replace('\\n', '\n')
